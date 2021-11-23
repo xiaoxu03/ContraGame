@@ -285,6 +285,7 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_Title = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_STAGE_TITLE));
 	bmp_Unit_Red = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_RED));
 	bmp_Unit_Blue = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_BLUE));
+	bmp_Hero = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_HERO));
 	//加载场景图像资源
 	bmp_Title = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_STAGE_TITLE));
 	bmp_HelpMenu = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_STAGE_HELP));
@@ -342,7 +343,7 @@ void KeyDown(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	{
 	case VK_ESCAPE:
 		if (nowStage == STAGE_STARTMENU)
-			ExitProcess(1);
+			ExitProcess(0);
 		else if (nowStage == STAGE_HELP)
 		InitStage(hWnd, STAGE_STARTMENU);
 		else
@@ -384,8 +385,6 @@ void KeyDown(HWND hWnd, WPARAM wParam, LPARAM lParam)
 // 键盘松开事件处理函数
 void KeyUp(HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
-	// TODO
-
 	switch (wParam)
 	{
 	case VK_ESCAPE:
@@ -509,7 +508,6 @@ Button* CreateButton(int buttonID, HBITMAP img, int width, int height, int x, in
 	button->height = height;
 	button->x = x;
 	button->y = y;
-
 	button->visible = false;
 	return button;
 }
@@ -519,9 +517,9 @@ Unit* CreateUnit(int side, int type, int x, int y, int health)
 {
 	Unit* unit = new Unit();
 	unit->side = side;
-	if (side == UNIT_SIZE_X) {
-		unit->img = bmp_Unit_Red;
-		unit->direction = UNIT_DIRECT_LEFT;
+	if (side == SIDE_HERO) {
+		unit->img = bmp_Hero;
+		unit->direction = UNIT_DIRECT_RIGHT;
 	}
 	else if (side == UNIT_SIZE_Y) {
 		unit->img = bmp_Unit_Blue;
@@ -532,8 +530,8 @@ Unit* CreateUnit(int side, int type, int x, int y, int health)
 	unit->status = UNIT_STATUS_HOLD;
 
 
-	unit->frame_row = type;
-	unit->frame_column = UNIT_LAST_FRAME * unit->direction;
+	unit->frame_row = unit->direction;
+	unit->frame_column = 0;
 
 	unit->frame_sequence = FRAMES_HOLD;
 	unit->frame_count = FRAMES_HOLD_COUNT;
@@ -628,8 +626,7 @@ void InitStage(HWND hWnd, int stageID)
 		// 按场景初始化单位
 		switch (stageID) {
 		case STAGE_1:
-			//units.push_back(CreateUnit(UNIT_SIDE_RED, UNIT_TYPE_CASTER, 200, 200, 100));
-			//units.push_back(CreateUnit(UNIT_SIDE_BLUE, UNIT_TYPE_HOPLITE, 600, 200, 100));
+			units.push_back(CreateUnit(SIDE_HERO, UNIT_TYPE_PLAYER, 200, 200, 100));
 			break;
 		default:
 			break;
@@ -651,15 +648,14 @@ void UpdateUnits(HWND hWnd)
 
 		//根据单位类型选择行为函数
 		switch (unit->type) {
-		case UNIT_TYPE_BEE:
-			UnitBehaviour_1(unit);
+		case UNIT_TYPE_PLAYER:
+			UnitBehaviour_hero(unit);
 			break;
 		case UNIT_TYPE_FISH:
-		case UNIT_TYPE_MOUSE:
-		case UNIT_TYPE_PLAYER:
+			break;
+		case UNIT_TYPE_SPIDER:
+			break;
 		case UNIT_TYPE_SLIME:
-			UnitBehaviour_mob(unit);
-
 			break;
 		}
 
@@ -672,21 +668,7 @@ void UpdateUnits(HWND hWnd)
 
 //玩家行为函数
 void UnitBehaviour_hero(Unit* unit) {
-
-	//double dirX = mouseX - unit->x;
-	//double dirY = mouseY - unit->y;
-	//double dirLen = sqrt(dirX * dirX + dirY * dirY) + 0.0001;
-
-
-	//if (dirX > 0) {
-		//unit->direction = UNIT_DIRECT_RIGHT;
-	//}
-	//else {
-		//unit->direction = UNIT_DIRECT_LEFT;
-	//}
-
-
-	//判断当前状态, 以及判断是否需要状态变化。这个状态的变化，主要是贴图的变化，位移之类的函数在后面再写
+	//判断当前状态, 以及判断是否需要状态变化
 	int next_status = unit->status;
 	switch (unit->status) {
 	case UNIT_STATUS_HOLD:
@@ -701,34 +683,37 @@ void UnitBehaviour_hero(Unit* unit) {
 		else if (keyZDown){
 			next_status = UNIT_STATUS_JUMP;
 		}
-		else if (keyUpDown )	//TODO:写出攀爬的位置判断
+		else if (keyUpDown) {
+		}	//TODO:写出攀爬的位置判断
 		break;
 	case UNIT_STATUS_WALK:
-		if ((unit->direction == UNIT_DIRECT_RIGHT && !keyRightDown) || (unit->direction == UNIT_DIRECT_LEFT && !keyLeftDown)) {
-			next_status == UNIT_STATUS_HOLD;
+		if (keyRightDown == 0 && keyLeftDown == 0) {
+			next_status = UNIT_STATUS_HOLD;
 		}
+		break;
 	case UNIT_STATUS_JUMP:
-		if () {//TODO:写出落地判断,分有无速度讨论走还是静止
+		if (unit->y<0) {//TODO:写出落地判断,分有无速度讨论走还是静止
 			if (unit->vx != 0) next_status == UNIT_STATUS_WALK;
 			else next_status = UNIT_STATUS_HOLD;
 		}
-		else if (unit->status == UNIT_STATUS_CLIMB && ) {
+		else if (unit->status == UNIT_STATUS_CLIMB && false) {
 
 		}//TODO:跳跃爬梯子
+		break;
 	case UNIT_STATUS_CLIMB:
 		if (keyZDown) {
 			next_status = UNIT_STATUS_JUMP;
 		}
-		else if (/*TODO:判断横向范围以及是否离开梯子变成跳跃状态*/) {
+		else if (/*TODO:判断横向范围以及是否离开梯子变成跳跃状态*/false) {
 			next_status = UNIT_STATUS_JUMP;
 		}
 		break;
-	};
+	}
+	//运动行为变化
 	if (next_status != unit->status) {
 		//状态变化
 		unit->status = next_status;
-		unit->frame_id = -1;
-
+		unit->frame_id = 0;
 		switch (unit->status) {
 		case UNIT_STATUS_HOLD:
 			unit->frame_sequence = FRAMES_HOLD;
@@ -739,11 +724,33 @@ void UnitBehaviour_hero(Unit* unit) {
 		case UNIT_STATUS_WALK:
 			unit->frame_sequence = FRAMES_WALK;
 			unit->frame_count = FRAMES_WALK_COUNT;
-			unit->vx = dirX / dirLen * UNIT_SPEED;
-			unit->vy = dirY / dirLen * UNIT_SPEED;
+			if (keyRightDown && keyLeftDown) {
+				unit->vx = 0;
+				unit->frame_row = 0; 
+				unit->frame_sequence = FRAMES_HOLD;
+				unit->frame_count = FRAMES_HOLD_COUNT;
+			}
+			else if (unit->direction == UNIT_DIRECT_RIGHT) {
+				unit->vx = 3.5;
+				unit->frame_row = 0;
+			}
+			else if(unit->direction == UNIT_DIRECT_LEFT){
+				unit->vx = -3.5;
+				unit->frame_row = 1;
+			}
 			break;
-		
-		};
+		case UNIT_STATUS_CLIMB:
+			unit->frame_sequence = FRAMES_CLIMB;
+			unit->frame_count = FRAMES_CLIMB_COUNT;
+			unit->vx = 0;
+			unit->vy = UNIT_SPEED;
+			break;
+		case UNIT_STATUS_JUMP:
+			unit->frame_sequence = FRAMES_JUMP;
+			unit->frame_count = FRAMES_CLIMB_COUNT;
+			unit->vy = 3;
+			break;
+		}
 	}
 
 	//动画运行到下一帧
@@ -759,7 +766,7 @@ void UnitBehaviour_hero(Unit* unit) {
 
 }
 //怪物行为函数 
-void UnitBehaviour_mob(Unit* unit) {
+/*void UnitBehaviour_mob(Unit* unit) {
 
 	double dirX = mouseX - unit->x;
 	double dirY = mouseY - unit->y;
@@ -823,7 +830,7 @@ void UnitBehaviour_mob(Unit* unit) {
 	unit->frame_column = column + unit->direction * (UNIT_LAST_FRAME - 2 * column);
 
 
-}
+}*/
 
 
 

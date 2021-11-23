@@ -36,14 +36,14 @@
 #define STAGE_HELP				-1			//帮助画面的ID
 #define STAGE_1					1			//第一个游戏场景的ID
 #define STAGE_2					2			//第二个游戏场景的ID
-#define STAGE_1					3			//第三个游戏场景的ID
-#define STAGE_1					4			//第四个游戏场景的ID
+#define STAGE_3 				3			//第三个游戏场景的ID
+#define STAGE_4					4			//第四个游戏场景的ID
 
 
 
-#define UNIT_SIZE_X				64			//单位的宽度
-#define UNIT_SIZE_Y				64			//单位的高度
-#define UNIT_LAST_FRAME			11			//单位的动画帧最大值
+#define UNIT_SIZE_X				63			//单位的宽度
+#define UNIT_SIZE_Y				63			//单位的高度
+#define UNIT_LAST_FRAME			10			//单位的动画帧最大值
 
 //单位阵营定义
 #define SIDE_HERO				10000		//定义玩家阵营
@@ -56,6 +56,7 @@
 #define UNIT_TYPE_MOUSE			3		//定义单位类型：老鼠
 #define UNIT_TYPE_FISH			4		//定义单位类型：鱼
 #define UNIT_TYPE_BOSS			5		//定义单位类型：BOSS
+#define UNIT_TYPE_SPIDER		6		//单位类型定义：蜘蛛
 
 //单位状态定义
 #define UNIT_STATUS_HOLD		0		//静止
@@ -96,7 +97,7 @@
 
 #define TIMER_GAMETIMER				1		//游戏的默认计时器ID
 #define TIMER_GAMETIMER_ELAPSE		15		//默认计时器刷新间隔的毫秒数
-#define UNIT_SPEED					1.5		//单位行走速度	
+#define UNIT_SPEED					3.5		//单位行走速度	
 
 
 #pragma endregion
@@ -203,8 +204,8 @@ void InitStage(HWND hWnd, int stageID);
 void UpdateUnits(HWND hWnd);
 
 //单位行为函数
-void UnitBehaviour_1(Unit* unit);
-void UnitBehaviour_mob(Unit* unit);
+void UnitBehaviour_hero(Unit* unit);
+//void UnitBehaviour_mob(Unit* unit);
 
 
 //TODO: 添加游戏需要的更多函数
