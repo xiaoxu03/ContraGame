@@ -10,7 +10,6 @@
 #define IDR_MAINFRAME                   128
 #define IDB_BITMAP_START                130
 #define IDI_ICON1                       135
-#define IDB_BITMAP_BLUE                 136
 #define IDB_BITMAP_GRASS                137
 #define IDB_BITMAP_RED                  138
 #define IDB_BITMAP_HELP                 148
@@ -37,13 +36,15 @@
 #define IDB_BITMAP_KEY_TRUE             175
 #define IDB_BITMAP_NUMBERS              176
 #define IDB_BITMAP_X                    177
+#define IDB_BITMAP1                     179
+#define IDB_BITMAP_RESTART              179
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        178
+#define _APS_NEXT_RESOURCE_VALUE        180
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110

@@ -31,6 +31,8 @@
 #define WINDOW_WIDTH			1260		//游戏窗口宽度
 #define WINDOW_HEIGHT			819			//游戏窗口高度
 
+//按键定义
+#define	VK_Z					0x5A		//定义Z键
 
 #define STAGE_STARTMENU			0			//开始画面的ID
 #define STAGE_HELP				-1			//帮助画面的ID
@@ -84,8 +86,11 @@
 #define BUTTON_BACK					1003	//返回按钮ID
 #define BUTTON_MENU					1004	//菜单按钮ID
 #define BUTTON_RESUME				1005	//继续按钮ID
+#define BUTTON_RESTART				1006	//重新开始按钮ID
 #define BUTTON_STARTGAME_WIDTH		212		//开始游戏按钮宽度
 #define BUTTON_STARTGAME_HEIGHT		76		//开始游戏按钮高度
+#define BUTTON_RESTART_WIDTH		212		//重新开始游戏按钮宽度
+#define BUTTON_RESTART_HEIGHT		76		//重新开始游戏按钮高度
 #define BUTTON_HELP_WIDTH			212		//帮助按钮宽度
 #define BUTTON_HELP_HEIGHT			76		//帮助按钮高度
 #define BUTTON_BACK_WIDTH			212		//返回按钮宽度
@@ -94,10 +99,10 @@
 #define BUTTON_MENU_HEIGHT			76		//菜单按钮高度
 #define BUTTON_RESUME_WIDTH			212		//继续按钮宽度
 #define BUTTON_RESUME_HEIGHT		76		//继续按钮高度
-
+#define GROUND_HEIGHT				538		//地面高度
 #define TIMER_GAMETIMER				1		//游戏的默认计时器ID
 #define TIMER_GAMETIMER_ELAPSE		15		//默认计时器刷新间隔的毫秒数
-#define UNIT_SPEED					3.5		//单位行走速度	
+#define UNIT_SPEED					4		//单位行走速度	
 
 
 #pragma endregion
@@ -128,6 +133,14 @@ struct Button
 	int height;		//高度
 };
 
+// 方块结构体
+typedef struct block {
+	bool crossable;
+	int x;
+	int y;
+
+	block* next;
+}block;
 // 单位结构体
 struct Unit
 {
@@ -150,6 +163,8 @@ struct Unit
 	int y;			//坐标y
 	double vx;		//速度x
 	double vy;		//速度y
+	double ax;		//加速度x
+	double ay;		//加速度y
 	int health;		//生命值
 };
 
@@ -206,8 +221,10 @@ void UpdateUnits(HWND hWnd);
 //单位行为函数
 void UnitBehaviour_hero(Unit* unit);
 //void UnitBehaviour_mob(Unit* unit);
-
-
+//视角跟随函数
+int Camera(Unit* unit);			//移动视角函数
+int Jump(Unit* unit);			//跳跃函数
+void fall(Unit* unit);			//跌落函数
 //TODO: 添加游戏需要的更多函数
 
 
@@ -218,8 +235,5 @@ void UnitBehaviour_hero(Unit* unit);
 
 // 绘图函数
 void Paint(HWND hWnd);
-
-// 初始化背景函数
-HBITMAP InitBackGround(HWND hWnd, HBITMAP bmp_src);
 
 #pragma endregion

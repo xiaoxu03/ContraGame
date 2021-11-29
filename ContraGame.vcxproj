@@ -171,6 +171,7 @@
     <Image Include="res\HELP.bmp" />
     <Image Include="res\icon.ico" />
     <Image Include="res\Red.bmp" />
+    <Image Include="res\RESTART.bmp" />
     <Image Include="res\RESUME.bmp" />
     <Image Include="res\START.bmp" />
     <Image Include="res\tx_bouns.bmp" />
