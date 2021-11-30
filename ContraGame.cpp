@@ -687,12 +687,7 @@ void UpdateUnits(HWND hWnd)
 			break;
 		}
 		}
-
-
-
 	}
-
-
 }
 //跟随视角判定函数
 int Camera(Unit* unit) {
@@ -713,7 +708,6 @@ int Jump(Unit* unit) {
 		unit->y = GROUND_HEIGHT;
 		next_status = UNIT_STATUS_HOLD;
 	}
-	
 	if (!keyRightDown && !keyLeftDown) {
 		unit->vx = 0;
 	}
@@ -735,6 +729,11 @@ int Jump(Unit* unit) {
 			unit->vx = 0;
 		}
 	}
+	if (unit->x + FRAMES_START_X >= 2280 && unit->x + FRAMES_START_X  <= 2585 && unit->y + unit->vy < 300)
+	{
+		unit->vy = -unit->vy;
+		unit->y = 350;
+	}
 	return next_status;
 }
 void fall(Unit* unit) {
@@ -753,10 +752,39 @@ void fall(Unit* unit) {
 	}
 }
 void Climb(Unit* unit) {
-	if (!keyZDown) {
+	if (!keyUpDown || unit->y <= 180) {
+		unit->frame_id--;
 		unit->vy = 0;
-
 	}
+	if (keyUpDown && keyRightDown)
+	{
+		unit->vy = -1.4;
+		unit->vx = 1.4;
+	}
+	else if (keyUpDown && keyRightDown)
+	{
+		unit->vy = -1.4;
+		unit->vx = -1.4;
+	}
+	else if(keyUpDown && unit->y >= 180)
+	{
+		unit->vy = -2;
+	}
+	else if (keyRightDown)
+	{
+		unit->vx = 1;
+	}
+	
+	else if (keyLeftDown)
+	{
+		unit->vx = -2;
+	}
+	else
+	{
+		unit->vx = 0;
+		unit->vy = 0;
+	}
+
 }
 //玩家行为函数
 void UnitBehaviour_hero(Unit* unit) {
@@ -777,9 +805,8 @@ void UnitBehaviour_hero(Unit* unit) {
 		else if (keyZDown && unit->y <= GROUND_HEIGHT){
 			next_status = UNIT_STATUS_JUMP;
 		}
-		else if (keyUpDown && unit->x + FRAMES_START_X >= 1800 && unit->x + FRAMES_START_X <= 2000 && unit->y > 200) {
+		else if (keyUpDown && unit->x + FRAMES_START_X >= 2585 && unit->x + FRAMES_START_X <= 2648 && unit->y > 180) {
 			next_status = UNIT_STATUS_CLIMB;
-			Climb(unit);
 		}	
 		break;
 	case UNIT_STATUS_WALK:
@@ -798,10 +825,11 @@ void UnitBehaviour_hero(Unit* unit) {
 		next_status = Jump(unit);
 		break;
 	case UNIT_STATUS_CLIMB:
+		Climb(unit);
 		if (keyZDown) {
 			next_status = UNIT_STATUS_JUMP;
 		}
-		else if (/*TODO:判断横向范围以及是否离开梯子变成跳跃状态*/false) {
+		else if (!(unit->x + FRAMES_START_X >= 2585 && unit->x + FRAMES_START_X <= 2648) && unit->y <= 180) {
 			next_status = UNIT_STATUS_JUMP;
 		}
 		break;
@@ -837,7 +865,7 @@ void UnitBehaviour_hero(Unit* unit) {
 			unit->frame_sequence = FRAMES_CLIMB;
 			unit->frame_count = FRAMES_CLIMB_COUNT;
 			unit->vx = 0;
-			unit->vy = UNIT_SPEED;
+			unit->vy = -2;
 			break;
 		case UNIT_STATUS_JUMP:
 			unit->frame_sequence = FRAMES_JUMP;
@@ -859,7 +887,7 @@ void UnitBehaviour_hero(Unit* unit) {
 	unit->frame_column = column;
 
 
-}
+}//2021.11.29  攀爬函数
 //怪物行为函数 
 /*void UnitBehaviour_mob(Unit* unit) {
 
