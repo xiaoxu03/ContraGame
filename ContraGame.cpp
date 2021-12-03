@@ -50,6 +50,7 @@ int nowStage = STAGE_STARTMENU;	//定义初始化当前场景编号
 Stage* currentStage = NULL;		//当前场景状态
 vector<Unit*> units;			//单位
 vector<Button*> buttons;		//按钮
+vector<Plat*> plats;			//平台
 
 int mouseX = 0;
 int mouseY = 0;
@@ -474,14 +475,15 @@ void LButtonDown(HWND hWnd, WPARAM wParam, LPARAM lParam)
 				}
 				case BUTTON_MENU:
 				{
-					InitStage(hWnd, STAGE_STARTMENU);
 					units.clear();
+					plats.clear();
 					FRAMES_START_X = 0;
+					InitStage(hWnd, STAGE_STARTMENU);
 					break;
 				}
 				case BUTTON_RESTART:
 				{
-					
+					plats.clear();
 					units.clear();
 					FRAMES_START_X = 0;
 					InitStage(hWnd, STAGE_1);
@@ -573,7 +575,14 @@ Unit* CreateUnit(int side, int type, int x, int y, int health)
 	return unit;
 }
 
-
+Plat* CreatePlat(int left, int right, int up, int down) {
+	Plat* plat = new Plat();
+	plat->left = left;
+	plat->right = right;
+	plat->up = up;
+	plat->down = down;
+	return plat;
+}
 
 // 初始化游戏场景函数
 void InitStage(HWND hWnd, int stageID)
@@ -651,10 +660,12 @@ void InitStage(HWND hWnd, int stageID)
 		}
 
 
-		// 按场景初始化单位
+		// 按场景初始化单位及矩形平台
 		switch (stageID) {
 		case STAGE_1:
-			units.push_back(CreateUnit(SIDE_HERO, UNIT_TYPE_PLAYER, 200, 538, 10));
+			units.push_back(CreateUnit(SIDE_HERO, UNIT_TYPE_PLAYER, 200, GROUND_HEIGHT, 10));
+			plats.push_back(CreatePlat(1952, 2140, 377, 440));
+			plats.push_back(CreatePlat(2267, 2582, 252, 315));
 			break;
 		default:
 			break;
@@ -692,7 +703,7 @@ void UpdateUnits(HWND hWnd)
 //跟随视角判定函数
 int Camera(Unit* unit) {
 	//判断条件
-	if (!((FRAMES_START_X <= 4 && unit->vx < 0) || (FRAMES_START_X >= 5035 && unit->vx > 0)) && (unit->x > 400 && unit->x < 1000)) {
+	if (!((FRAMES_START_X <= 5 && unit->vx < 0) || (FRAMES_START_X >= 5035 && unit->vx > 0)) && ((unit->x > 500 && unit->vx >0 )|| (unit->x < 1000 && unit->vx <0))) {
 		unit->x -= unit->vx;
 		FRAMES_START_X += unit->vx;
 	}
@@ -701,9 +712,10 @@ int Camera(Unit* unit) {
 //跳跃函数
 int Jump(Unit* unit) {
 	int next_status = UNIT_STATUS_JUMP;
+	//跳跃以及掉坑
 	if (unit->y <= GROUND_HEIGHT && !keyZDown) unit->vy += 1;
 	else if (unit->y <= GROUND_HEIGHT && keyZDown)	unit->vy += 0.3;
-	else if (unit->y > GROUND_HEIGHT && !(unit->x + FRAMES_START_X >= 1276 && unit->x + FRAMES_START_X <= 1438)) {
+	else if (unit->y > GROUND_HEIGHT && !(unit->x + FRAMES_START_X >= PIT1_LEFT && unit->x + FRAMES_START_X <= PIT1_RIGHT - UNIT_SIZE_X)) {
 		unit->vy = 0;
 		unit->y = GROUND_HEIGHT;
 		next_status = UNIT_STATUS_HOLD;
@@ -714,28 +726,33 @@ int Jump(Unit* unit) {
 	else if (keyRightDown && !keyLeftDown) {
 		unit->frame_column = UNIT_DIRECT_RIGHT;
 		unit->vx = 5;
+		
 	}
 	else if (keyLeftDown && !keyRightDown) {
 		unit->frame_column = UNIT_DIRECT_LEFT;
 		unit->vx = -5;
 	}
-	if (unit->y > GROUND_HEIGHT && (unit->x + FRAMES_START_X >= 1276 && unit->x + FRAMES_START_X <= 1438)) {
-		if (unit->x + unit->vx + FRAMES_START_X >= 1438 && keyRightDown) {
-			unit->x = 1438 - FRAMES_START_X;
-			unit->vx = 0;
+	for (int i = 0; i < plats.size(); i++) {
+		//顶头函数
+		if (unit->y + unit->vy - UNIT_SIZE_Y < plats[i]->down && unit->y + unit->vy + UNIT_SIZE_Y> plats[i]->up && unit->x + FRAMES_START_X + unit->vx >= plats[i]->left - UNIT_SIZE_X + 20 && unit->x + FRAMES_START_X + unit->vx <= plats[i]->right - 20) {
+			unit->y = plats[i]->down + UNIT_SIZE_Y;
+			unit->vy = -unit->vy;
 		}
-		else if (unit->x + unit->vx + FRAMES_START_X <= 1276 && keyLeftDown) {
-			unit->x = 1276 - FRAMES_START_X;
-			unit->vx = 0;
+		//侧碰撞
+		else if (unit->y >= plats[i]->up && unit->y - UNIT_SIZE_Y <= plats[i]->down) {
+			if (unit->x + UNIT_SIZE_X < plats[i]->left && unit->x + unit->vx + UNIT_SIZE_X > plats[i]->left) {
+				unit->x = plats[i]->left - UNIT_SIZE_X - FRAMES_START_X;
+				unit->vx = 0;
+			}
+			else if (unit->x > plats[i]->right && unit->x + unit->vx < plats[i]->right) {
+				unit->x = plats[i]->right - FRAMES_START_X;
+				unit->vx = 0;
+			}
 		}
-	}
-	if (unit->x + FRAMES_START_X >= 2280 && unit->x + FRAMES_START_X  <= 2585 && unit->y + unit->vy < 300)
-	{
-		unit->vy = -unit->vy;
-		unit->y = 350;
 	}
 	return next_status;
 }
+//掉落函数
 void fall(Unit* unit) {
 	if (unit->x + FRAMES_START_X >= 1276 && unit->x + FRAMES_START_X <= 1438) {
 		unit->vy += 0.5;
@@ -751,6 +768,7 @@ void fall(Unit* unit) {
 		}
 	}
 }
+//爬梯子函数
 void Climb(Unit* unit) {
 	if (!keyUpDown || unit->y <= 180) {
 		unit->frame_id--;
@@ -870,7 +888,7 @@ void UnitBehaviour_hero(Unit* unit) {
 		case UNIT_STATUS_JUMP:
 			unit->frame_sequence = FRAMES_JUMP;
 			unit->frame_count = FRAMES_JUMP_COUNT;
-			unit->vy = -10;
+			unit->vy = -11;
 			break;
 		}
 	}
@@ -996,7 +1014,7 @@ void Paint(HWND hWnd)
 			if(unit != nullptr){
 			SelectObject(hdc_loadBmp, unit->img);
 			TransparentBlt(
-				hdc_memBuffer, unit->x - 0.5 * UNIT_SIZE_X, unit->y - 0.5 * UNIT_SIZE_Y,
+				hdc_memBuffer, unit->x, unit->y - UNIT_SIZE_X,
 				UNIT_SIZE_X, UNIT_SIZE_Y,
 				hdc_loadBmp, UNIT_SIZE_X * unit->frame_column, UNIT_SIZE_Y * unit->frame_row, UNIT_SIZE_X, UNIT_SIZE_Y,
 				RGB(255, 255, 255)

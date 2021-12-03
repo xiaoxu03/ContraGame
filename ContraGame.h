@@ -99,12 +99,17 @@
 #define BUTTON_MENU_HEIGHT			76		//菜单按钮高度
 #define BUTTON_RESUME_WIDTH			212		//继续按钮宽度
 #define BUTTON_RESUME_HEIGHT		76		//继续按钮高度
-#define GROUND_HEIGHT				538		//地面高度
+#define GROUND_HEIGHT				567		//地面高度
 #define TIMER_GAMETIMER				1		//游戏的默认计时器ID
 #define TIMER_GAMETIMER_ELAPSE		15		//默认计时器刷新间隔的毫秒数
 #define UNIT_SPEED					4		//单位行走速度	
 
-
+//场景特殊定义
+#define PIT1_LEFT					1259
+#define PIT1_RIGHT					1449
+#define LADDER1_LEFT				2583
+#define LADDER1_RIGHT				2646
+#define LADDER_UP					189
 #pragma endregion
 
 
@@ -133,14 +138,13 @@ struct Button
 	int height;		//高度
 };
 
-// 方块结构体
-typedef struct block {
-	bool crossable;
-	int x;
-	int y;
-
-	block* next;
-}block;
+// 平台结构体
+struct Plat {
+	int left;
+	int right;
+	int down;
+	int up;
+};
 // 单位结构体
 struct Unit
 {
@@ -211,7 +215,8 @@ Button* CreateButton(int buttonID, HBITMAP img, int width, int height, int x, in
 
 // 添加单位函数
 Unit* CreateUnit(int side, int type, int x, int y, int health);
-
+//添加平台函数
+Plat* CreatePlat(int left, int right, int up, int down);
 // 初始化场景函数
 void InitStage(HWND hWnd, int stageID);
 
