@@ -65,6 +65,7 @@
 #define UNIT_STATUS_WALK		1		//行走
 #define UNIT_STATUS_JUMP		2		//跳跃
 #define UNIT_STATUS_CLIMB		3		//攀爬
+#define UNIT_STATUS_DEAD		4		//
 
 //单位方向定义
 #define UNIT_DIRECT_RIGHT		0		//向右
@@ -173,7 +174,16 @@ struct Unit
 	int health;		//生命值
 };
 
-
+//血量结构体定义
+struct Health {
+	HBITMAP image;
+	int frame_row;
+	int frame_column;
+	int* frame_sequence;	//当前的帧序列
+	int frame_id;			//当前显示的是帧序列的第几个
+	int x;					//坐标x
+	int y;					//坐标y
+};
 
 
 //TODO: 添加游戏需要的更多种数据（地物、砖块等）
@@ -215,9 +225,13 @@ void TimerUpdate(HWND hWnd, WPARAM wParam, LPARAM lParam);
 Button* CreateButton(int buttonID, HBITMAP img, int width, int height, int x, int y);
 
 // 添加单位函数
-Unit* CreateUnit(int side, int type, int x, int y, int health);
+Unit* CreateUnit(int side, int type, int x, int y, int health, HBITMAP texture);
 //添加平台函数
 Plat* CreatePlat(int left, int right, int up, int down);
+//添加血量显示函数
+Health* CreateHealth(HBITMAP img, int x, int y);
+//血量函数
+void health_change(Unit* unit);
 // 初始化场景函数
 void InitStage(HWND hWnd, int stageID);
 
@@ -226,7 +240,7 @@ void UpdateUnits(HWND hWnd);
 
 //单位行为函数
 void UnitBehaviour_hero(Unit* unit);
-//void UnitBehaviour_mob(Unit* unit);
+void UnitBehaviour_mob(Unit* unit,Unit* hero);
 //视角跟随函数
 int Camera(Unit* unit);			//移动视角函数
 int Jump(Unit* unit);			//跳跃函数

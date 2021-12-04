@@ -51,6 +51,8 @@ Stage* currentStage = NULL;		//当前场景状态
 vector<Unit*> units;			//单位
 vector<Button*> buttons;		//按钮
 vector<Plat*> plats;			//平台
+vector<Health*> hearts;			//血量
+vector<Unit*> mobs;				//怪物
 
 int mouseX = 0;
 int mouseY = 0;
@@ -97,12 +99,7 @@ int FRAMES_SWITCH_ON[] = { 1 };
 int FRAMES_SWITCH_ON_COUNT = 1;
 int FRAMES_SWITCH_OFF[] = { 1 };
 int FRAMES_SWITCH_OFF_COUNT = 1;
-int FRAMES_HEART_FULL[] = { 1 };
-int FRAMES_HEART_FULL_COUNT = 1;
-int FRAMES_HEART_HALF[] = { 1 };
-int FRAMES_HEART_HALF_COUNT = 1;
-int FRAMES_HEART_EMPTY[] = { 1 };
-int FRAMES_HEART_EMPTY_COUNT = 1;
+int FRAMES_HEART[] = { 0, 1, 2 };
 //场景渲染起点
 int FRAMES_START_X = 0;
 int X = 0;
@@ -541,18 +538,11 @@ Button* CreateButton(int buttonID, HBITMAP img, int width, int height, int x, in
 }
 
 // 添加实体函数
-Unit* CreateUnit(int side, int type, int x, int y, int health)
+Unit* CreateUnit(int side, int type, int x, int y, int health, HBITMAP texture)
 {
 	Unit* unit = new Unit();
 	unit->side = side;
-	if (side == SIDE_HERO) {
-		unit->img = bmp_Hero;
-		unit->direction = UNIT_DIRECT_RIGHT;
-	}
-	else if (side == UNIT_SIZE_Y) {
-		unit->img = bmp_Unit_Blue;
-		unit->direction = UNIT_DIRECT_RIGHT;
-	}
+	unit->img = texture;
 
 	unit->type = type;
 	unit->status = UNIT_STATUS_HOLD;
@@ -584,7 +574,17 @@ Plat* CreatePlat(int left, int right, int up, int down,bool is_half) {
 	plat->is_half = is_half;
 	return plat;
 }
-
+Health* CreateHealth(HBITMAP img, int x, int y) {
+	Health* health = new Health();
+	health->x = x;
+	health->y = y;
+	health->image = img;
+	health->frame_column = 0;
+	health->frame_row = 0;
+	health->frame_id = 0;
+	health->frame_sequence = FRAMES_HEART;
+	return health;
+}
 // 初始化游戏场景函数
 void InitStage(HWND hWnd, int stageID)
 {
@@ -664,19 +664,21 @@ void InitStage(HWND hWnd, int stageID)
 		// 按场景初始化单位及矩形平台
 		switch (stageID) {
 		case STAGE_1:
-			units.push_back(CreateUnit(SIDE_HERO, UNIT_TYPE_PLAYER, 200, GROUND_HEIGHT, 10));
+			units.push_back(CreateUnit(SIDE_HERO, UNIT_TYPE_PLAYER, 200, GROUND_HEIGHT, 6, bmp_Hero));
+			mobs.push_back(CreateUnit(SIDE_MOB, UNIT_TYPE_SPIDER, 600, GROUND_HEIGHT, 2, bmp_Spider));
 			plats.push_back(CreatePlat(1952, 2140, 378, 441, false));
 			plats.push_back(CreatePlat(2267, 2582, 252, 315, false));
 			plats.push_back(CreatePlat(4095, 4283, 252, 285, true));
 			plats.push_back(CreatePlat(4095, 4283, 504, 537, true));
-			plats.push_back(CreatePlat(4220, 4409, 378, 410, true));
-			plats.push_back(CreatePlat(4409, 4472, 0, 490, false));
+			plats.push_back(CreatePlat(4220, 4360, 378, 410, true));
+			plats.push_back(CreatePlat(4420, 4472, 0, 490, false));
+			hearts.push_back(CreateHealth(bmp_Heart, 0, 0));
+			hearts.push_back(CreateHealth(bmp_Heart, 63, 0));
+			hearts.push_back(CreateHealth(bmp_Heart, 126, 0));
 			break;
 		default:
 			break;
 		}
-
-
 	}
 
 	//刷新显示
@@ -695,12 +697,22 @@ void UpdateUnits(HWND hWnd)
 		case UNIT_TYPE_PLAYER:
 			UnitBehaviour_hero(unit);
 			break;
-		case UNIT_TYPE_FISH:
-			break;
-		case UNIT_TYPE_SPIDER:
-			break;
-		case UNIT_TYPE_SLIME:
-			break;
+		}
+		}
+	}
+	for (int i = 0; i < mobs.size(); i++) {
+		Unit* mob = mobs[i];
+		//根据单位类型选择行为函数
+		if (mob != nullptr) {
+			switch (mob->type) {
+			case UNIT_TYPE_FISH:
+				break;
+			case UNIT_TYPE_SPIDER:
+				UnitBehaviour_mob(mob,units[0]);
+				break;
+			case UNIT_TYPE_SLIME:
+				break;
+			
 		}
 		}
 	}
@@ -754,7 +766,6 @@ int Jump(Unit* unit) {
 	else if (keyRightDown && !keyLeftDown) {
 		unit->frame_column = UNIT_DIRECT_RIGHT;
 		unit->vx = 5;
-		
 	}
 	else if (keyLeftDown && !keyRightDown) {
 		unit->frame_column = UNIT_DIRECT_LEFT;
@@ -768,12 +779,12 @@ int Jump(Unit* unit) {
 		}
 		//侧碰撞
 		else if (unit->y >= plats[i]->up && unit->y - UNIT_SIZE_Y <= plats[i]->down) {
-			if (unit->x + FRAMES_START_X > plats[i]->right && unit->x + unit->vx + FRAMES_START_X < plats[i]->right) {
+			if (unit->x + FRAMES_START_X >= plats[i]->right && unit->x + unit->vx + FRAMES_START_X < plats[i]->right) {
 				unit->x = plats[i]->right - FRAMES_START_X;
 				unit->vx = 0;
 				keyLeftDown = false;
 			}
-			if (unit->x + UNIT_SIZE_X + FRAMES_START_X < plats[i]->left && unit->x + unit->vx + UNIT_SIZE_X + FRAMES_START_X >= plats[i]->left) {
+			if (unit->x + UNIT_SIZE_X + FRAMES_START_X <= plats[i]->left && unit->x + unit->vx + UNIT_SIZE_X + FRAMES_START_X > plats[i]->left) {
 				unit->x = plats[i]->left - UNIT_SIZE_X - FRAMES_START_X;
 				unit->vx = 0;
 				keyRightDown = false;
@@ -824,7 +835,44 @@ void Climb(Unit* unit) {
 		unit->vx = 0;
 		unit->vy = 0;
 	}
-
+}
+//血量函数
+void health_change(Unit* unit) {
+	if (unit->health == 6) {
+		hearts[0]->frame_column = 0;
+		hearts[1]->frame_column = 0;
+		hearts[2]->frame_column = 0;
+	}
+	else if (unit->health == 5) {
+		hearts[0]->frame_column = 0;
+		hearts[1]->frame_column = 0;
+		hearts[2]->frame_column = 1;
+	}
+	else if (unit->health == 4) {
+		hearts[0]->frame_column = 0;
+		hearts[1]->frame_column = 0;
+		hearts[2]->frame_column = 2;
+	}
+	else if (unit->health == 3) {
+		hearts[0]->frame_column = 0;
+		hearts[1]->frame_column = 1;
+		hearts[2]->frame_column = 2;
+	}
+	else if (unit->health == 2) {
+		hearts[0]->frame_column = 0;
+		hearts[1]->frame_column = 2;
+		hearts[2]->frame_column = 2;
+	}
+	else if (unit->health == 1) {
+		hearts[0]->frame_column = 1;
+		hearts[1]->frame_column = 2;
+		hearts[2]->frame_column = 2;
+	}
+	else if (unit->health == 0) {
+		hearts[0]->frame_column = 2;
+		hearts[1]->frame_column = 2;
+		hearts[2]->frame_column = 2;
+	}
 }
 //玩家行为函数
 void UnitBehaviour_hero(Unit* unit) {
@@ -916,6 +964,8 @@ void UnitBehaviour_hero(Unit* unit) {
 	}
 	FRAMES_START_X = Camera(unit);
 	X = unit->x + FRAMES_START_X;
+	//血量变化函数
+	health_change(unit);
 	//动画运行到下一帧
 	unit->x += unit->vx;
 	unit->y += unit->vy;
@@ -925,15 +975,13 @@ void UnitBehaviour_hero(Unit* unit) {
 
 	int column = unit->frame_sequence[unit->frame_id];
 	unit->frame_column = column;
-
-
-}//2021.11.29  攀爬函数
+}
 //怪物行为函数 
-/*void UnitBehaviour_mob(Unit* unit) {
+void UnitBehaviour_mob(Unit* unit,Unit* hero) {
 
-	double dirX = mouseX - unit->x;
-	double dirY = mouseY - unit->y;
-	double dirLen = sqrt(dirX * dirX + dirY * dirY) + 0.0001;
+	double dirX = hero->x - unit->x;
+	double dirY = hero->y - unit->y;
+	double distance = sqrt(dirX * dirX + dirY * dirY);
 
 
 	if (dirX > 0) {
@@ -948,36 +996,32 @@ void UnitBehaviour_hero(Unit* unit) {
 	int next_state = unit->status;
 	switch (unit->status) {
 	case UNIT_STATUS_HOLD:
-		next_state = UNIT_STATUS_WALK;
+		if (abs(dirX) <= 1200) next_state = UNIT_STATUS_WALK;
 		break;
 	case UNIT_STATUS_WALK:
-		//TODO
+		if (abs(dirX) > 1200) next_state = UNIT_STATUS_HOLD;
+		if (dirX != 0)
+			unit->vx = dirX / abs(dirX) * 2.5;
+		else unit->vx = 0;
 		break;
+		if (unit->health <= 0) next_state = UNIT_STATUS_DEAD;
 	};
-
 	if (next_state != unit->status) {
 		//状态变化
 		unit->status = next_state;
 		unit->frame_id = -1;
 
 		switch (unit->status) {
-		case UNIT_STATE_HOLD:
-			unit->frame_sequence = FRAMES_HOLD;
-			unit->frame_count = FRAMES_HOLD_COUNT;
+		case UNIT_STATUS_HOLD:
+			unit->frame_sequence = FRAMES_SPIDER;
+			unit->frame_id--;
 			unit->vx = 0;
 			unit->vy = 0;
 			break;
 		case UNIT_STATUS_WALK:
 			unit->frame_sequence = FRAMES_WALK;
 			unit->frame_count = FRAMES_WALK_COUNT;
-			unit->vx = dirX / dirLen * UNIT_SPEED;
-			unit->vy = dirY / dirLen * UNIT_SPEED;
 			break;
-		case UNIT_STATE_ATTACK:
-			unit->frame_sequence = FRAMES_ATTACK;
-			unit->frame_count = FRAMES_ATTACK_COUNT;
-			unit->vx = 0;
-			unit->vy = 0;
 			break;
 		};
 	}
@@ -987,16 +1031,9 @@ void UnitBehaviour_hero(Unit* unit) {
 	unit->y += unit->vy;
 
 	unit->frame_id++;
-	unit->frame_id = unit->frame_id % unit->frame_count;
+	unit->frame_id /= FRAMES_SPIDER_COUNT;
 
-	int column = unit->frame_sequence[unit->frame_id];
-	unit->frame_column = column + unit->direction * (UNIT_LAST_FRAME - 2 * column);
-
-
-}*/
-
-
-
+}
 #pragma endregion
 
 
@@ -1036,16 +1073,37 @@ void Paint(HWND hWnd)
 			if(unit != nullptr){
 			SelectObject(hdc_loadBmp, unit->img);
 			TransparentBlt(
-				hdc_memBuffer, unit->x, unit->y - UNIT_SIZE_X,
+				hdc_memBuffer, unit->x, unit->y - UNIT_SIZE_Y,
 				UNIT_SIZE_X, UNIT_SIZE_Y,
 				hdc_loadBmp, UNIT_SIZE_X * unit->frame_column, UNIT_SIZE_Y * unit->frame_row, UNIT_SIZE_X, UNIT_SIZE_Y,
 				RGB(255, 255, 255)
 			);
 			}
 		}
-
-
-
+		for (int i = 0; i < hearts.size(); i++) {
+			Health* heart = hearts[i];
+			if (heart != nullptr) {
+				SelectObject(hdc_loadBmp, heart->image);
+				TransparentBlt(
+					hdc_memBuffer, heart->x, heart->y,
+					UNIT_SIZE_X, UNIT_SIZE_Y,
+					hdc_loadBmp, UNIT_SIZE_X * heart->frame_column, UNIT_SIZE_Y * heart->frame_row, UNIT_SIZE_X, UNIT_SIZE_Y,
+					RGB(255, 255, 255)
+				);
+			}
+		}
+		for (int i = 0; i < mobs.size(); i++) {
+			Unit* mob = mobs[i];
+			if (mob != nullptr) {
+				SelectObject(hdc_loadBmp, mob->img);
+				TransparentBlt(
+					hdc_memBuffer, mob->x - FRAMES_START_X, mob->y - UNIT_SIZE_Y,
+					UNIT_SIZE_X, UNIT_SIZE_Y,
+					hdc_loadBmp, UNIT_SIZE_X * mob->frame_id, 0, UNIT_SIZE_X, UNIT_SIZE_Y,
+					RGB(255, 255, 255)
+				);
+			}
+		}
 	}
 
 
