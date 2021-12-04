@@ -575,12 +575,13 @@ Unit* CreateUnit(int side, int type, int x, int y, int health)
 	return unit;
 }
 
-Plat* CreatePlat(int left, int right, int up, int down) {
+Plat* CreatePlat(int left, int right, int up, int down,bool is_half) {
 	Plat* plat = new Plat();
 	plat->left = left;
 	plat->right = right;
 	plat->up = up;
 	plat->down = down;
+	plat->is_half = is_half;
 	return plat;
 }
 
@@ -664,8 +665,12 @@ void InitStage(HWND hWnd, int stageID)
 		switch (stageID) {
 		case STAGE_1:
 			units.push_back(CreateUnit(SIDE_HERO, UNIT_TYPE_PLAYER, 200, GROUND_HEIGHT, 10));
-			plats.push_back(CreatePlat(1952, 2140, 377, 440));
-			plats.push_back(CreatePlat(2267, 2582, 252, 315));
+			plats.push_back(CreatePlat(1952, 2140, 378, 441, false));
+			plats.push_back(CreatePlat(2267, 2582, 252, 315, false));
+			plats.push_back(CreatePlat(4095, 4283, 252, 285, true));
+			plats.push_back(CreatePlat(4095, 4283, 504, 537, true));
+			plats.push_back(CreatePlat(4220, 4409, 378, 410, true));
+			plats.push_back(CreatePlat(4409, 4472, 0, 490, false));
 			break;
 		default:
 			break;
@@ -710,6 +715,29 @@ int Camera(Unit* unit) {
 	return FRAMES_START_X;
 }
 //跳跃函数
+int fall(Unit* unit, int next_status) {
+	if (unit->x + FRAMES_START_X >= PIT1_LEFT && unit->x + FRAMES_START_X <= PIT1_RIGHT) {
+		unit->vy += 0.5;
+	}
+	else {
+		for (int i = 0; i < plats.size(); i++) {
+			if (unit->vy == 0 && unit->y == plats[i]->up && unit->x + FRAMES_START_X >= plats[i]->left - UNIT_SIZE_X && unit->x + FRAMES_START_X <= plats[i]->right &&!(unit->x + unit->vx > plats[i]->left - FRAMES_START_X - UNIT_SIZE_X && unit->x + unit->vx < plats[i]->right - FRAMES_START_X)) {
+				next_status = UNIT_STATUS_JUMP;
+			}
+		}
+	}
+	if (unit->y > GROUND_HEIGHT && (unit->x + FRAMES_START_X >= 1276 && unit->x + FRAMES_START_X <= 1438)) {
+		if (unit->x + unit->vx + FRAMES_START_X >= 1438 && keyRightDown) {
+			unit->x = 1438 - FRAMES_START_X;
+			unit->vx = 0;
+		}
+		else if (unit->x + unit->vx + FRAMES_START_X <= 1276 && keyLeftDown) {
+			unit->x = 1276 - FRAMES_START_X;
+			unit->vx = 0;
+		}
+	}
+	return next_status;
+}
 int Jump(Unit* unit) {
 	int next_status = UNIT_STATUS_JUMP;
 	//跳跃以及掉坑
@@ -734,40 +762,34 @@ int Jump(Unit* unit) {
 	}
 	for (int i = 0; i < plats.size(); i++) {
 		//顶头函数
-		if (unit->y + unit->vy - UNIT_SIZE_Y < plats[i]->down && unit->y + unit->vy + UNIT_SIZE_Y> plats[i]->up && unit->x + FRAMES_START_X + unit->vx >= plats[i]->left - UNIT_SIZE_X + 20 && unit->x + FRAMES_START_X + unit->vx <= plats[i]->right - 20) {
+		if (!plats[i]->is_half && unit->y >= plats[i]->down + UNIT_SIZE_Y && unit->y + unit->vy - UNIT_SIZE_Y < plats[i]->down && unit->y + unit->vy + UNIT_SIZE_Y> plats[i]->up && unit->x + FRAMES_START_X + unit->vx >= plats[i]->left - UNIT_SIZE_X - 5 && unit->x + FRAMES_START_X + unit->vx <= plats[i]->right + 5) {
 			unit->y = plats[i]->down + UNIT_SIZE_Y;
 			unit->vy = -unit->vy;
 		}
 		//侧碰撞
 		else if (unit->y >= plats[i]->up && unit->y - UNIT_SIZE_Y <= plats[i]->down) {
-			if (unit->x + UNIT_SIZE_X < plats[i]->left && unit->x + unit->vx + UNIT_SIZE_X > plats[i]->left) {
-				unit->x = plats[i]->left - UNIT_SIZE_X - FRAMES_START_X;
-				unit->vx = 0;
-			}
-			else if (unit->x > plats[i]->right && unit->x + unit->vx < plats[i]->right) {
+			if (unit->x + FRAMES_START_X > plats[i]->right && unit->x + unit->vx + FRAMES_START_X < plats[i]->right) {
 				unit->x = plats[i]->right - FRAMES_START_X;
 				unit->vx = 0;
+				keyLeftDown = false;
 			}
+			if (unit->x + UNIT_SIZE_X + FRAMES_START_X < plats[i]->left && unit->x + unit->vx + UNIT_SIZE_X + FRAMES_START_X >= plats[i]->left) {
+				unit->x = plats[i]->left - UNIT_SIZE_X - FRAMES_START_X;
+				unit->vx = 0;
+				keyRightDown = false;
+			}
+		}
+		//顶面碰撞
+		else if (unit->y < plats[i]->up && unit->y + unit->vy >= plats[i]->up && unit->x + unit->vx > plats[i]->left - FRAMES_START_X - UNIT_SIZE_X && unit->x + unit->vx < plats[i]->right  - FRAMES_START_X) {
+			unit->vy = 0;
+			unit->y = plats[i]->up;
+			next_status = UNIT_STATUS_HOLD;
 		}
 	}
 	return next_status;
 }
 //掉落函数
-void fall(Unit* unit) {
-	if (unit->x + FRAMES_START_X >= 1276 && unit->x + FRAMES_START_X <= 1438) {
-		unit->vy += 0.5;
-	}
-	if (unit->y > GROUND_HEIGHT && (unit->x + FRAMES_START_X >= 1276 && unit->x + FRAMES_START_X <= 1438)) {
-		if (unit->x + unit->vx + FRAMES_START_X >= 1438 && keyRightDown) {
-			unit->x = 1438 - FRAMES_START_X;
-			unit->vx = 0;
-		}
-		else if (unit->x + unit->vx + FRAMES_START_X <= 1276 && keyLeftDown) {
-			unit->x = 1276 - FRAMES_START_X;
-			unit->vx = 0;
-		}
-	}
-}
+
 //爬梯子函数
 void Climb(Unit* unit) {
 	if (!keyUpDown || unit->y <= 180) {
@@ -811,7 +833,7 @@ void UnitBehaviour_hero(Unit* unit) {
 	int next_status = unit->status;
 	switch (unit->status) {
 	case UNIT_STATUS_HOLD:
-		fall(unit);
+		next_status = fall(unit,next_status);
 		if (keyRightDown) {
 			next_status = UNIT_STATUS_WALK;
 			unit->direction = UNIT_DIRECT_RIGHT;
@@ -828,7 +850,7 @@ void UnitBehaviour_hero(Unit* unit) {
 		}	
 		break;
 	case UNIT_STATUS_WALK:
-		fall(unit);
+		next_status=fall(unit,next_status);
 		if (keyZDown && unit->y <= GROUND_HEIGHT) {
 			next_status = UNIT_STATUS_JUMP;
 		}
@@ -847,7 +869,7 @@ void UnitBehaviour_hero(Unit* unit) {
 		if (keyZDown) {
 			next_status = UNIT_STATUS_JUMP;
 		}
-		else if (!(unit->x + FRAMES_START_X >= 2585 && unit->x + FRAMES_START_X <= 2648) && unit->y <= 180) {
+		else if (!(unit->x + FRAMES_START_X >= LADDER1_LEFT && unit->x + FRAMES_START_X <= LADDER1_RIGHT) && unit->y <= LADDER1_UP + UNIT_SIZE_Y) {
 			next_status = UNIT_STATUS_JUMP;
 		}
 		break;
@@ -888,7 +910,7 @@ void UnitBehaviour_hero(Unit* unit) {
 		case UNIT_STATUS_JUMP:
 			unit->frame_sequence = FRAMES_JUMP;
 			unit->frame_count = FRAMES_JUMP_COUNT;
-			unit->vy = -11;
+			unit->vy = -10.5;
 			break;
 		}
 	}
@@ -1057,58 +1079,4 @@ void Paint(HWND hWnd)
 	// 结束绘制
 	EndPaint(hWnd, &ps);
 }
-
-
-
-// 初始化背景函数
-/*HBITMAP InitBackGround(HWND hWnd, HBITMAP bmp_src) {
-
-	srand(time(NULL));
-	PAINTSTRUCT ps;
-	HDC hdc_window = BeginPaint(hWnd, &ps);
-
-	HDC hdc_memBuffer = CreateCompatibleDC(hdc_window);
-	HDC hdc_loadBmp = CreateCompatibleDC(hdc_window);
-
-	//初始化缓存
-	HBITMAP	bmp_output = CreateCompatibleBitmap(hdc_window, WINDOW_WIDTH, WINDOW_HEIGHT);
-	SelectObject(hdc_memBuffer, bmp_output);
-
-	//加载资源
-	SelectObject(hdc_loadBmp, bmp_src);
-
-
-	for (int i = 0; i < BG_ROWS; i++) {
-
-		int src_row = 1;
-		if (i >= BG_ROWS_SKY)
-			src_row = 0;
-
-		for (int j = 0; j < BG_COLUMNS; j++) {
-			int src_column = rand() % BG_SRC_COUNT;
-
-			TransparentBlt(
-				hdc_memBuffer, j*BG_CELL_WIDTH, i*BG_CELL_HEIGHT,
-				BG_CELL_WIDTH, BG_CELL_HEIGHT,
-				hdc_loadBmp, src_column * BG_CELL_WIDTH, src_row * BG_CELL_HEIGHT,
-				BG_CELL_WIDTH, BG_CELL_HEIGHT,
-				RGB(255, 255, 255)
-			);
-
-		}
-	}
-	
-	// 最后将所有的信息绘制到屏幕上
-	BitBlt(hdc_window, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, hdc_memBuffer, 0, 0, SRCCOPY);
-	
-	// 回收资源所占的内存（非常重要）
-	DeleteDC(hdc_memBuffer);
-	DeleteDC(hdc_loadBmp);
-
-	// 结束绘制
-	EndPaint(hWnd, &ps);
-
-	return bmp_output;
-}*/
-
 #pragma endregion

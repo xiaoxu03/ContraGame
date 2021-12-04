@@ -109,7 +109,7 @@
 #define PIT1_RIGHT					1449
 #define LADDER1_LEFT				2583
 #define LADDER1_RIGHT				2646
-#define LADDER_UP					189
+#define LADDER1_UP					189
 #pragma endregion
 
 
@@ -144,6 +144,7 @@ struct Plat {
 	int right;
 	int down;
 	int up;
+	bool is_half;
 };
 // 单位结构体
 struct Unit
@@ -229,7 +230,7 @@ void UnitBehaviour_hero(Unit* unit);
 //视角跟随函数
 int Camera(Unit* unit);			//移动视角函数
 int Jump(Unit* unit);			//跳跃函数
-void fall(Unit* unit);			//跌落函数
+int fall(Unit* unit,int next_status);			//跌落函数
 //TODO: 添加游戏需要的更多函数
 
 
