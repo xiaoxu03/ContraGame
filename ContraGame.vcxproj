@@ -163,6 +163,7 @@
   <ItemGroup>
     <Image Include="res\BACK.bmp" />
     <Image Include="res\bk_forest.bmp" />
+    <Image Include="res\bk_gameover.bmp" />
     <Image Include="res\bk_help.bmp" />
     <Image Include="res\bk_title.bmp" />
     <Image Include="res\Blue.bmp" />

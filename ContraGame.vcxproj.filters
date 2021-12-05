@@ -119,5 +119,6 @@
     <Image Include="res\RESTART.bmp">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="res\bk_gameover.bmp" />
   </ItemGroup>
 </Project>

@@ -226,6 +226,7 @@ Button* CreateButton(int buttonID, HBITMAP img, int width, int height, int x, in
 
 // 添加单位函数
 Unit* CreateUnit(int side, int type, int x, int y, int health, HBITMAP texture);
+Unit* CreateSpider(int side, int type, int x, int y, int health, HBITMAP texture);
 //添加平台函数
 Plat* CreatePlat(int left, int right, int up, int down);
 //添加血量显示函数
