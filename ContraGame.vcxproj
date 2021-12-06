@@ -175,6 +175,7 @@
     <Image Include="res\RESTART.bmp" />
     <Image Include="res\RESUME.bmp" />
     <Image Include="res\START.bmp" />
+    <Image Include="res\tx_attack.bmp" />
     <Image Include="res\tx_bouns.bmp" />
     <Image Include="res\tx_box.bmp" />
     <Image Include="res\tx_coin.bmp" />

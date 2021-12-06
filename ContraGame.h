@@ -33,7 +33,7 @@
 
 //按键定义
 #define	VK_Z					0x5A		//定义Z键
-
+#define VK_X					0x58		//定义X键
 #define STAGE_STARTMENU			0			//开始画面的ID
 #define STAGE_HELP				-1			//帮助画面的ID
 #define STAGE_1					1			//第一个游戏场景的ID

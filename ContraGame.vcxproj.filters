@@ -120,5 +120,6 @@
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="res\bk_gameover.bmp" />
+    <Image Include="res\tx_attack.bmp" />
   </ItemGroup>
 </Project>

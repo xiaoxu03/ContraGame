@@ -44,8 +44,8 @@ HBITMAP bmp_Key_True;			//钥匙已获得资源
 HBITMAP bmp_Numbers;			//数字资源
 HBITMAP bmp_X;					//x符号资源
 HBITMAP bmp_RestartButton;		//重新开始按钮资源
-HBITMAP bmp_GameOver;
-
+HBITMAP bmp_GameOver;			//游戏是否结束
+HBITMAP bmp_Attack;				//攻击资源
 int nowStage = STAGE_STARTMENU;	//定义初始化当前场景编号
 Stage* currentStage = NULL;		//当前场景状态
 vector<Unit*> units;			//单位
@@ -65,6 +65,8 @@ bool keyZDown = false;
 bool keyXDown = false;
 bool GameOver = false;
 bool Dead = false;
+bool Attacking = false;
+bool Attacked = false;
 //帧
 int FRAMES_HOLD[] = { 0 };
 int FRAMES_HOLD_COUNT = 1;
@@ -74,8 +76,6 @@ int FRAMES_JUMP[] = { 7 };
 int FRAMES_JUMP_COUNT = 1;
 int FRAMES_CLIMB[] = { 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6 };
 int FRAMES_CLIMB_COUNT = 16;
-int FRAMES_ATTACK[] = { 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 };
-int FRAMES_ATTACK_COUNT = 24;
 int FRAMES_BOUNS_FULL[] = { 0 };
 int FRAMES_BOUNS_FULL_COUNT = 1;
 int FRAMES_DOOR_UP_OPEN[] = { 0 };
@@ -101,9 +101,11 @@ int FRAMES_SWITCH_ON_COUNT = 1;
 int FRAMES_SWITCH_OFF[] = { 1 };
 int FRAMES_SWITCH_OFF_COUNT = 1;
 int FRAMES_HEART[] = { 0, 1, 2 };
+int FRAMES_ATTACK[] = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2 , 2, 2, 2, 2 };
+int FRAMES_ATTACK_COUNT = 24;
 //场景渲染起点
 int FRAMES_START_X = 0;
-int X = 0;
+int attack_frame_id = 0;
 // TODO: 在此添加其它全局变量
 
 
@@ -289,6 +291,7 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_Title = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_STAGE_TITLE));
 	bmp_Unit_Red = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_RED));
 	bmp_Hero = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_HERO));
+	bmp_Attack = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_ATTACK));
 	//加载场景图像资源
 	bmp_Title = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_STAGE_TITLE));
 	bmp_HelpMenu = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_STAGE_HELP));
@@ -392,6 +395,10 @@ void KeyDown(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		break;
 	case VK_Z:
 		keyZDown = true;
+		break;
+	case VK_X:
+		keyXDown = true;
+		break;
 	default:
 		break;
 	}
@@ -416,6 +423,10 @@ void KeyUp(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		break;
 	case VK_Z:
 		keyZDown = false;
+		break;
+	case VK_X:
+		keyXDown = false;
+		break;
 	default:
 		break;
 	}
@@ -477,6 +488,7 @@ void LButtonDown(HWND hWnd, WPARAM wParam, LPARAM lParam)
 					units.clear();
 					plats.clear();
 					mobs.clear();
+					hearts.clear();
 					FRAMES_START_X = 0;
 					InitStage(hWnd, STAGE_STARTMENU);
 					break;
@@ -486,6 +498,7 @@ void LButtonDown(HWND hWnd, WPARAM wParam, LPARAM lParam)
 					plats.clear();
 					units.clear();
 					mobs.clear();
+					hearts.clear();
 					FRAMES_START_X = 0;
 					InitStage(hWnd, STAGE_1);
 				}
@@ -781,6 +794,33 @@ int Camera(Unit* unit) {
 	}
 	return FRAMES_START_X;
 }
+//攻击函数
+void Attack(Unit* unit) {
+	if (keyXDown && !Attacking) {
+		Attacking = true;
+	}
+	else if (!keyXDown ) {
+		Attacking = false;
+		attack_frame_id = 0;
+		Attacked = false;
+	}
+	else if (attack_frame_id == FRAMES_ATTACK_COUNT) {
+		Attacked = true;
+		Attacking = false;
+		attack_frame_id = 0;
+	}
+	else if (keyXDown && Attacking) {
+		attack_frame_id++;
+	}
+	//TODO:引入攻击中属性。
+	for (int i = 0; i < mobs.size(); i++) {
+		Unit* mob = mobs[i];
+		if ((mob->x - unit->x>= 0 && mob->x - unit->x < 80 && unit->direction) || (mob->x - unit->x <= 0 && mob->x - unit->x > -80 && !unit->direction)) {
+			mob->health--;
+			mob->x += (0.5 - unit->direction) * 120;
+		}
+	}
+}
 //掉落函数
 int fall(Unit* unit, int next_status) {
 	if (unit->x >= PIT1_LEFT && unit->x <= PIT1_RIGHT) {
@@ -946,9 +986,9 @@ void health_change(Unit* unit) {
 }
 void Hurt(Unit* unit) {
 	for (int i = 0; i < mobs.size(); i++) {
-		if (sqrt(units[0]->x - mobs[i]->x) * (units[0]->x - mobs[i]->x) + (units[0]->y - mobs[i]->y) * (units[0]->y - mobs[i]->y) < 40) {
-			if (units[0]->x - mobs[i]->x >= 0) unit->x += 60;
-			else unit->x -= 60;
+		if (sqrt((units[0]->x - mobs[i]->x) * (units[0]->x - mobs[i]->x) + (units[0]->y - mobs[i]->y) * (units[0]->y - mobs[i]->y)) < 40) {
+			if (units[0]->x - mobs[i]->x >= 0) unit->x += 80;
+			else unit->x -= 80;
 			unit->health--;
 		}
 	}
@@ -1043,6 +1083,7 @@ void UnitBehaviour_hero(Unit* unit) {
 		}
 	}
 	FRAMES_START_X = Camera(unit);
+	Attack(unit);
 	//血量变化函数
 	Hurt(unit);
 	health_change(unit);
@@ -1161,8 +1202,19 @@ void Paint(HWND hWnd)
 				hdc_loadBmp, UNIT_SIZE_X * unit->frame_column, UNIT_SIZE_Y * unit->frame_row, UNIT_SIZE_X, UNIT_SIZE_Y,
 				RGB(255, 255, 255)
 			);
+			if (Attacking && !Attacked) {
+				//ExitProcess(0);
+				SelectObject(hdc_loadBmp, bmp_Attack);
+				TransparentBlt(
+				hdc_memBuffer, unit->x - FRAMES_START_X + 80 * (0.5-unit->direction), unit->y - UNIT_SIZE_Y,
+				UNIT_SIZE_X, UNIT_SIZE_Y,
+				hdc_loadBmp, UNIT_SIZE_X * attack_frame_id, UNIT_SIZE_Y * unit->direction, UNIT_SIZE_X, UNIT_SIZE_Y,
+				RGB(255, 255, 255));
 			}
+			
 		}
+		}
+		
 		for (int i = 0; i < hearts.size(); i++) {
 			Health* heart = hearts[i];
 			if (heart != nullptr) {
