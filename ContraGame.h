@@ -183,6 +183,12 @@ struct Bonus {
 	int type;
 	bool display;
 };
+struct Door {
+	HBITMAP img;
+	int x;
+	int y;
+	int frame_column;
+};
 //血量结构体定义
 struct Health {
 	HBITMAP image;

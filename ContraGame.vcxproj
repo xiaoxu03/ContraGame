@@ -162,6 +162,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\BACK.bmp" />
+    <Image Include="res\bitmap1.bmp" />
     <Image Include="res\bk_forest.bmp" />
     <Image Include="res\bk_gameover.bmp" />
     <Image Include="res\bk_help.bmp" />
@@ -189,6 +190,7 @@
     <Image Include="res\tx_spider.bmp" />
     <Image Include="res\tx_switch.bmp" />
     <Image Include="res\ui_heart.bmp" />
+    <Image Include="res\ui_key.bmp" />
     <Image Include="res\ui_key_false.bmp" />
     <Image Include="res\ui_key_true.bmp" />
     <Image Include="res\ui_numbers.bmp" />

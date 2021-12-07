@@ -16,7 +16,7 @@ WCHAR szTitle[MAX_LOADSTRING]; // 标题栏文本
 WCHAR szWindowClass[MAX_LOADSTRING]; // 主窗口类名
 
 
-
+HBITMAP bmp_UIKey;
 HBITMAP bmp_Title;				//标题界面图像资源
 HBITMAP bmp_StartButton;		//开始按钮图像资源
 HBITMAP bmp_HelpButton;			//帮助按钮资源
@@ -52,9 +52,10 @@ Stage* currentStage = NULL;		//当前场景状态
 vector<Unit*> units;			//单位
 vector<Button*> buttons;		//按钮
 vector<Plat*> plats;			//平台
-vector<Health*> hearts;			//血量
+vector<Health*> uis;			//血量
 vector<Unit*> mobs;				//怪物
 vector<Bonus*> bonus;			//奖励物品
+vector<Door*> doors;			//门
 vector<Bonus_Block*> bonus_blocks;
 int mouseX = 0;
 int mouseY = 0;
@@ -65,10 +66,12 @@ bool keyRightDown = false;
 bool keyEscDown = false;
 bool keyZDown = false;
 bool keyXDown = false;
+bool keySpaceDown = false;
 bool GameOver = false;
 bool Dead = false;
 bool Attacking = false;
 bool Attacked = false;
+bool DoubleJumped = false;
 //帧
 int FRAMES_HOLD[] = { 0 };
 int FRAMES_HOLD_COUNT = 1;
@@ -80,14 +83,6 @@ int FRAMES_CLIMB[] = { 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6 };
 int FRAMES_CLIMB_COUNT = 16;
 int FRAMES_BOUNS_FULL[] = { 0 };
 int FRAMES_BOUNS_FULL_COUNT = 1;
-int FRAMES_DOOR_UP_OPEN[] = { 0 };
-int FRAMES_DOOR_UP_OPEN_COUNT = 1;
-int FRAMES_DOOR_UP_CLOSE[] = { 0 };
-int FRAMES_DOOR_UP_CLOSE_COUNT = 1;
-int FRAMES_DOOR_DOWN_OPEN[] = { 1 };
-int FRAMES_DOOR_DOWN_OPEN_COUNT = 1;
-int FRAMES_DOOR_DOWN_CLOSE[] = { 1 };
-int FRAMES_DOOR_DOWN_CLOSE_COUNT = 1;
 int FRAMES_FISH_SIWM[] = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 };
 int FRAMES_FISH_SWIM_COUNT = 16;
 int FRAMES_FISH_DEAD[] = { 2 };
@@ -310,6 +305,7 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	//加载UI图像资源
 	bmp_Numbers = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_NUMBERS));
 	bmp_Heart = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_HEART));
+	bmp_UIKey = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_UIKEY));
 	bmp_X = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_X));
 	bmp_GameOver = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_OVER));
 	//加载按钮图像资源
@@ -402,6 +398,9 @@ void KeyDown(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	case VK_X:
 		keyXDown = true;
 		break;
+	case VK_SPACE:
+		keySpaceDown = true;
+		break;
 	default:
 		break;
 	}
@@ -429,6 +428,9 @@ void KeyUp(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		break;
 	case VK_X:
 		keyXDown = false;
+		break;
+	case VK_SPACE:
+		keySpaceDown = false;
 		break;
 	default:
 		break;
@@ -491,7 +493,10 @@ void LButtonDown(HWND hWnd, WPARAM wParam, LPARAM lParam)
 					units.clear();
 					plats.clear();
 					mobs.clear();
-					hearts.clear();
+					uis.clear();
+					bonus.clear();
+					bonus_blocks.clear();
+					doors.clear();
 					FRAMES_START_X = 0;
 					InitStage(hWnd, STAGE_STARTMENU);
 					break;
@@ -501,7 +506,10 @@ void LButtonDown(HWND hWnd, WPARAM wParam, LPARAM lParam)
 					plats.clear();
 					units.clear();
 					mobs.clear();
-					hearts.clear();
+					uis.clear();
+					bonus.clear();
+					bonus_blocks.clear();
+					doors.clear();
 					FRAMES_START_X = 0;
 					InitStage(hWnd, STAGE_1);
 				}
@@ -556,12 +564,21 @@ Button* CreateButton(int buttonID, HBITMAP img, int width, int height, int x, in
 	button->visible = false;
 	return button;
 }
-Bonus* CreateBonus(HBITMAP img, int x, int y, int type) {
+Door* CreateDoor(HBITMAP img, int x, int y) {
+	Door* door = new Door();
+	door->img = img;
+	door->x = x;
+	door->y = y;
+	door->frame_column = 1;
+	return door;
+}
+Bonus* CreateBonus(HBITMAP img, int x, int y, int type, bool display) {
 	Bonus* bonus = new Bonus();
 	bonus->img = img;
 	bonus->x = x;
 	bonus->y = y;
 	bonus->type = type;
+	bonus->display = display;
 	return bonus;
 }
 Bonus_Block* CreateBlock(HBITMAP img,int x,int y) {
@@ -733,11 +750,14 @@ void InitStage(HWND hWnd, int stageID)
 			plats.push_back(CreatePlat(4095, 4283, 504, 537, true));
 			plats.push_back(CreatePlat(4220, 4360, 378, 410, true));
 			plats.push_back(CreatePlat(4420, 4472, 0, 490, false));
-			hearts.push_back(CreateHealth(bmp_Heart, 0, 0));
-			hearts.push_back(CreateHealth(bmp_Heart, 63, 0));
-			hearts.push_back(CreateHealth(bmp_Heart, 126, 0));
+			uis.push_back(CreateHealth(bmp_Heart, 0, 0));
+			uis.push_back(CreateHealth(bmp_Heart, 63, 0));
+			uis.push_back(CreateHealth(bmp_Heart, 126, 0));
+			uis.push_back(CreateHealth(bmp_UIKey, 1180, 0));
 			bonus_blocks.push_back(CreateBlock(bmp_Bouns, 2016, 378));
-			bonus.push_back(CreateBonus(bmp_JumpFruit, 2016, 315, SKILL_JUMP));
+			bonus.push_back(CreateBonus(bmp_JumpFruit, 2016, 315, SKILL_JUMP, false));
+			bonus.push_back(CreateBonus(bmp_Key, 2400, 188, SKILL_NONE,true));
+			doors.push_back(CreateDoor(bmp_Door, 3224 - 189, 441));
 			break;
 		default:
 			break;
@@ -816,6 +836,7 @@ void Knock(Unit* unit) {
 		}
 	}
 }
+
 //跟随视角判定函数
 int Camera(Unit* unit) {
 	//判断条件
@@ -824,6 +845,21 @@ int Camera(Unit* unit) {
 		FRAMES_START_X += unit->vx;
 	}
 	return FRAMES_START_X;
+}
+//二段跳函数
+void DoubleJump(Unit* unit) {
+	if (unit->status == UNIT_STATUS_JUMP  && unit->skill_type == SKILL_JUMP && keySpaceDown && !DoubleJumped) {
+		unit->vy += -8;
+		DoubleJumped = true;
+	}
+}
+//开门加血函数
+void OpenDoor(Unit* unit) {
+	if (unit->x >= doors[0]->x - 15 && keyUpDown && unit->x <= doors[0]->x + 45 && unit->y <= GROUND_HEIGHT && unit->y >= GROUND_HEIGHT - 100 && uis[3]->frame_column == 1) {
+		doors[0]->frame_column = 0;
+		uis[3]->frame_column = 0;
+		unit->health = 6;
+	}
 }
 //攻击函数
 void Attack(Unit* unit) {
@@ -858,6 +894,9 @@ void Eat(Unit* unit) {
 	if (bonus[0]->display && sqrt((unit->x - bonus[0]->x) * (unit->x - bonus[0]->x) + (unit->y - bonus[0]->y) * (unit->y - bonus[0]->y)) <= 40) {
 		unit->skill_type = SKILL_JUMP;
 		bonus[0]->display = false;
+	}else if (bonus[1]->display && sqrt((unit->x - bonus[1]->x) * (unit->x - bonus[1]->x) + (unit->y - bonus[1]->y) * (unit->y - bonus[1]->y)) <= 40) {
+		bonus[1]->display = false;
+		uis[3]->frame_column = 1;
 	}
 }
 //掉落函数
@@ -909,6 +948,7 @@ int Jump(Unit* unit) {
 		unit->vy = 0;
 		unit->y = GROUND_HEIGHT;
 		next_status = UNIT_STATUS_HOLD;
+		DoubleJumped = false;
 	}
 	if (!keyRightDown && !keyLeftDown) {
 		unit->vx = 0;
@@ -944,6 +984,7 @@ int Jump(Unit* unit) {
 		else if (unit->y < plats[i]->up && unit->y + unit->vy >= plats[i]->up && unit->x + unit->vx > plats[i]->left - UNIT_SIZE_X && unit->x + unit->vx < plats[i]->right ) {
 			unit->vy = 0;
 			unit->y = plats[i]->up;
+			DoubleJumped = false;
 			next_status = UNIT_STATUS_HOLD;
 		}
 	}
@@ -989,39 +1030,39 @@ void Climb(Unit* unit) {
 //血量函数
 void health_change(Unit* unit) {
 	if (unit->health == 6) {
-		hearts[0]->frame_column = 0;
-		hearts[1]->frame_column = 0;
-		hearts[2]->frame_column = 0;
+		uis[0]->frame_column = 0;
+		uis[1]->frame_column = 0;
+		uis[2]->frame_column = 0;
 	}
 	else if (unit->health == 5) {
-		hearts[0]->frame_column = 0;
-		hearts[1]->frame_column = 0;
-		hearts[2]->frame_column = 1;
+		uis[0]->frame_column = 0;
+		uis[1]->frame_column = 0;
+		uis[2]->frame_column = 1;
 	}
 	else if (unit->health == 4) {
-		hearts[0]->frame_column = 0;
-		hearts[1]->frame_column = 0;
-		hearts[2]->frame_column = 2;
+		uis[0]->frame_column = 0;
+		uis[1]->frame_column = 0;
+		uis[2]->frame_column = 2;
 	}
 	else if (unit->health == 3) {
-		hearts[0]->frame_column = 0;
-		hearts[1]->frame_column = 1;
-		hearts[2]->frame_column = 2;
+		uis[0]->frame_column = 0;
+		uis[1]->frame_column = 1;
+		uis[2]->frame_column = 2;
 	}
 	else if (unit->health == 2) {
-		hearts[0]->frame_column = 0;
-		hearts[1]->frame_column = 2;
-		hearts[2]->frame_column = 2;
+		uis[0]->frame_column = 0;
+		uis[1]->frame_column = 2;
+		uis[2]->frame_column = 2;
 	}
 	else if (unit->health == 1) {
-		hearts[0]->frame_column = 1;
-		hearts[1]->frame_column = 2;
-		hearts[2]->frame_column = 2;
+		uis[0]->frame_column = 1;
+		uis[1]->frame_column = 2;
+		uis[2]->frame_column = 2;
 	}
 	else if (unit->health == 0) {
-		hearts[0]->frame_column = 2;
-		hearts[1]->frame_column = 2;
-		hearts[2]->frame_column = 2;
+		uis[0]->frame_column = 2;
+		uis[1]->frame_column = 2;
+		uis[2]->frame_column = 2;
 	}
 }
 void Hurt(Unit* unit) {
@@ -1126,6 +1167,8 @@ void UnitBehaviour_hero(Unit* unit) {
 	Knock(unit);
 	Eat(unit);
 	Attack(unit);
+	DoubleJump(unit);
+	OpenDoor(unit);
 	//血量变化函数
 	Hurt(unit);
 	health_change(unit);
@@ -1242,6 +1285,13 @@ void Paint(HWND hWnd)
 	else if (currentStage->stageID >= STAGE_1 && currentStage->stageID <= STAGE_1) //TODO：添加多个游戏场景
 	{
 		BitBlt(hdc_memBuffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, hdc_loadBmp, FRAMES_START_X, 0, SRCCOPY);
+		SelectObject(hdc_loadBmp, bmp_Door);
+		TransparentBlt(
+			hdc_memBuffer, doors[0]->x - FRAMES_START_X, doors[0]->y + 21,
+			UNIT_SIZE_X, 105,
+			hdc_loadBmp, UNIT_SIZE_X * doors[0]->frame_column, 0, UNIT_SIZE_X, 105 ,
+			RGB(255, 255, 255)
+		);
 		for (int i = 0; i < units.size(); i++) {
 			Unit* unit = units[i];
 			if(unit != nullptr){
@@ -1296,8 +1346,8 @@ void Paint(HWND hWnd)
 			}
 			
 		}
-		for (int i = 0; i < hearts.size(); i++) {
-			Health* heart = hearts[i];
+		for (int i = 0; i < uis.size(); i++) {
+			Health* heart = uis[i];
 			if (heart != nullptr) {
 				SelectObject(hdc_loadBmp, heart->image);
 				TransparentBlt(

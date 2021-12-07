@@ -126,5 +126,7 @@
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="res\jump_fruit.bmp" />
+    <Image Include="res\bitmap1.bmp" />
+    <Image Include="res\ui_key.bmp" />
   </ItemGroup>
 </Project>
