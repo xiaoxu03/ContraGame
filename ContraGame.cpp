@@ -46,6 +46,7 @@ HBITMAP bmp_X;					//x符号资源
 HBITMAP bmp_RestartButton;		//重新开始按钮资源
 HBITMAP bmp_GameOver;			//游戏是否结束
 HBITMAP bmp_Attack;				//攻击资源
+HBITMAP bmp_JumpFruit;			//跳跃果实
 int nowStage = STAGE_STARTMENU;	//定义初始化当前场景编号
 Stage* currentStage = NULL;		//当前场景状态
 vector<Unit*> units;			//单位
@@ -53,7 +54,8 @@ vector<Button*> buttons;		//按钮
 vector<Plat*> plats;			//平台
 vector<Health*> hearts;			//血量
 vector<Unit*> mobs;				//怪物
-
+vector<Bonus*> bonus;			//奖励物品
+vector<Bonus_Block*> bonus_blocks;
 int mouseX = 0;
 int mouseY = 0;
 bool mouseDown = false;
@@ -101,8 +103,8 @@ int FRAMES_SWITCH_ON_COUNT = 1;
 int FRAMES_SWITCH_OFF[] = { 1 };
 int FRAMES_SWITCH_OFF_COUNT = 1;
 int FRAMES_HEART[] = { 0, 1, 2 };
-int FRAMES_ATTACK[] = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2 , 2, 2, 2, 2 };
-int FRAMES_ATTACK_COUNT = 24;
+int FRAMES_ATTACK[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2 , 2, 2, 2, 2, 2, 2, 2, 2 , 2, 2, 2, 2 };
+int FRAMES_ATTACK_COUNT = 48;
 //场景渲染起点
 int FRAMES_START_X = 0;
 int attack_frame_id = 0;
@@ -304,6 +306,7 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_Key = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_KEY));
 	bmp_Lazer = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_LAZER));
 	bmp_Switch = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_SWITCH));
+	bmp_JumpFruit = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_JUMP));
 	//加载UI图像资源
 	bmp_Numbers = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_NUMBERS));
 	bmp_Heart = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_HEART));
@@ -553,7 +556,22 @@ Button* CreateButton(int buttonID, HBITMAP img, int width, int height, int x, in
 	button->visible = false;
 	return button;
 }
-
+Bonus* CreateBonus(HBITMAP img, int x, int y, int type) {
+	Bonus* bonus = new Bonus();
+	bonus->img = img;
+	bonus->x = x;
+	bonus->y = y;
+	bonus->type = type;
+	return bonus;
+}
+Bonus_Block* CreateBlock(HBITMAP img,int x,int y) {
+	Bonus_Block* block = new Bonus_Block();
+	block->x = x;
+	block->y = y;
+	block->img = img;
+	block->frame_id = 0;
+	return block;
+}
 // 添加实体函数
 Unit* CreateUnit(int side, int type, int x, int y, int health, HBITMAP texture)
 {
@@ -572,13 +590,12 @@ Unit* CreateUnit(int side, int type, int x, int y, int health, HBITMAP texture)
 	unit->frame_count = FRAMES_HOLD_COUNT;
 	unit->frame_id = 0;
 
-	unit->ax = 0;
-	unit->ay = 0;
 	unit->x = x;
 	unit->y = y;
 	unit->vx = 0;
 	unit->vy = 0;
 	unit->health = health;
+	unit->skill_type = SKILL_NONE;
 	return unit;
 }
 Unit* CreateSpider(int side, int type, int x, int y, int health, HBITMAP texture)
@@ -603,6 +620,8 @@ Unit* CreateSpider(int side, int type, int x, int y, int health, HBITMAP texture
 	unit->vx = 0;
 	unit->vy = 0;
 	unit->health = health;
+	unit->display = true;
+	unit->death_timer = 0;
 	return unit;
 }
 
@@ -707,6 +726,7 @@ void InitStage(HWND hWnd, int stageID)
 		case STAGE_1:
 			units.push_back(CreateUnit(SIDE_HERO, UNIT_TYPE_PLAYER, 200, GROUND_HEIGHT, 6, bmp_Hero));
 			mobs.push_back(CreateSpider(SIDE_MOB, UNIT_TYPE_SPIDER, 1100, GROUND_HEIGHT, 2, bmp_Spider));
+			mobs.push_back(CreateSpider(SIDE_MOB, UNIT_TYPE_SPIDER, 2500, GROUND_HEIGHT, 2, bmp_Spider));
 			plats.push_back(CreatePlat(1952, 2140, 378, 441, false));
 			plats.push_back(CreatePlat(2267, 2582, 252, 315, false));
 			plats.push_back(CreatePlat(4095, 4283, 252, 285, true));
@@ -716,6 +736,8 @@ void InitStage(HWND hWnd, int stageID)
 			hearts.push_back(CreateHealth(bmp_Heart, 0, 0));
 			hearts.push_back(CreateHealth(bmp_Heart, 63, 0));
 			hearts.push_back(CreateHealth(bmp_Heart, 126, 0));
+			bonus_blocks.push_back(CreateBlock(bmp_Bouns, 2016, 378));
+			bonus.push_back(CreateBonus(bmp_JumpFruit, 2016, 315, SKILL_JUMP));
 			break;
 		default:
 			break;
@@ -785,6 +807,15 @@ void UpdateUnits(HWND hWnd)
 		}
 	}
 }
+void Knock(Unit* unit) {
+	for (int i = 0; i < bonus_blocks.size(); i++) {
+		Bonus_Block* block = bonus_blocks[i];
+		if( i == 0 && block->frame_id == 0 && unit->x >= block->x - 23 && unit->x <= block->x + 40 && unit->y - UNIT_SIZE_Y >= block->y + UNIT_SIZE_Y && unit->y - UNIT_SIZE_Y <= block->y + UNIT_SIZE_Y + 20 ) {
+			block->frame_id = 1;
+			bonus[0]->display = true;
+		}
+	}
+}
 //跟随视角判定函数
 int Camera(Unit* unit) {
 	//判断条件
@@ -812,13 +843,21 @@ void Attack(Unit* unit) {
 	else if (keyXDown && Attacking) {
 		attack_frame_id++;
 	}
-	//TODO:引入攻击中属性。
-	for (int i = 0; i < mobs.size(); i++) {
-		Unit* mob = mobs[i];
-		if ((mob->x - unit->x>= 0 && mob->x - unit->x < 80 && unit->direction) || (mob->x - unit->x <= 0 && mob->x - unit->x > -80 && !unit->direction)) {
-			mob->health--;
-			mob->x += (0.5 - unit->direction) * 120;
+	if (Attacking) {
+			for (int i = 0; i < mobs.size(); i++) {
+			Unit* mob = mobs[i];
+			if ((mob->x - unit->x>= 0 && mob->x - unit->x < 80 && !unit->direction) || (mob->x - unit->x <= 0 && mob->x - unit->x > -80 && unit->direction) && unit->health > 0) {
+				mob->health--;
+				mob->x += (0.5 - unit->direction) * 120;
+				Attacked = true;
+			}
 		}
+	}
+}
+void Eat(Unit* unit) {
+	if (bonus[0]->display && sqrt((unit->x - bonus[0]->x) * (unit->x - bonus[0]->x) + (unit->y - bonus[0]->y) * (unit->y - bonus[0]->y)) <= 40) {
+		unit->skill_type = SKILL_JUMP;
+		bonus[0]->display = false;
 	}
 }
 //掉落函数
@@ -844,7 +883,8 @@ int fall(Unit* unit, int next_status) {
 		}
 	}
 	return next_status;
-}int fall_mob(Unit* unit, int next_status) {
+}
+int fall_mob(Unit* unit, int next_status) {
 	if (unit->x >= PIT1_LEFT && unit->x <= PIT1_RIGHT) {
 		unit->vy += 0.5;
 	}
@@ -986,7 +1026,7 @@ void health_change(Unit* unit) {
 }
 void Hurt(Unit* unit) {
 	for (int i = 0; i < mobs.size(); i++) {
-		if (sqrt((units[0]->x - mobs[i]->x) * (units[0]->x - mobs[i]->x) + (units[0]->y - mobs[i]->y) * (units[0]->y - mobs[i]->y)) < 40) {
+		if (sqrt((units[0]->x - mobs[i]->x) * (units[0]->x - mobs[i]->x) + (units[0]->y - mobs[i]->y) * (units[0]->y - mobs[i]->y)) < 40 && mobs[i]->health > 0) {
 			if (units[0]->x - mobs[i]->x >= 0) unit->x += 80;
 			else unit->x -= 80;
 			unit->health--;
@@ -1083,6 +1123,8 @@ void UnitBehaviour_hero(Unit* unit) {
 		}
 	}
 	FRAMES_START_X = Camera(unit);
+	Knock(unit);
+	Eat(unit);
 	Attack(unit);
 	//血量变化函数
 	Hurt(unit);
@@ -1126,7 +1168,6 @@ void UnitBehaviour_mob(Unit* unit,Unit* hero) {
 		else if (unit->direction == UNIT_DIRECT_RIGHT) unit->vx = 1;
 		else unit->vx = 0;
 		break;
-		if (unit->health <= 0) next_state = UNIT_STATUS_DEAD;
 	};
 	if (next_state != unit->status) {
 		//状态变化
@@ -1149,14 +1190,23 @@ void UnitBehaviour_mob(Unit* unit,Unit* hero) {
 	}
 
 	//动画运行到下一帧
-	unit->x += unit->vx;
-	unit->y += unit->vy;
+	
 
 	unit->frame_id++;
 	unit->frame_id = unit->frame_id % unit->frame_count;
 
 	int column = unit->frame_sequence[unit->frame_id];
 	unit->frame_column = column;
+	if (unit->health <= 0) {
+		switch (unit->type) {
+		case UNIT_TYPE_SPIDER:
+			unit->frame_column = 3;
+			unit->death_timer++;
+			unit->vx = 0;
+		}
+	}
+	unit->x += unit->vx;
+	unit->y += unit->vy;
 }
 #pragma endregion
 
@@ -1203,7 +1253,6 @@ void Paint(HWND hWnd)
 				RGB(255, 255, 255)
 			);
 			if (Attacking && !Attacked) {
-				//ExitProcess(0);
 				SelectObject(hdc_loadBmp, bmp_Attack);
 				TransparentBlt(
 				hdc_memBuffer, unit->x - FRAMES_START_X + 80 * (0.5-unit->direction), unit->y - UNIT_SIZE_Y,
@@ -1214,7 +1263,39 @@ void Paint(HWND hWnd)
 			
 		}
 		}
-		
+		for (int i = 0; i < mobs.size(); i++) {
+			Unit* mob = mobs[i];
+			if (mob != nullptr && mob->death_timer < 100) {
+				SelectObject(hdc_loadBmp, mob->img);
+				TransparentBlt(
+					hdc_memBuffer, mob->x - FRAMES_START_X, mob->y - UNIT_SIZE_Y,
+					UNIT_SIZE_X, UNIT_SIZE_Y,
+					hdc_loadBmp, UNIT_SIZE_X * mob->frame_column, UNIT_SIZE_Y * mob->frame_row, UNIT_SIZE_X, UNIT_SIZE_Y,
+					RGB(255, 255, 255)
+				);
+			}
+		}
+		for (int i = 0; i < bonus_blocks.size(); i++) {
+			Bonus_Block* block = bonus_blocks[i];
+			SelectObject(hdc_loadBmp, block->img);
+			TransparentBlt(
+				hdc_memBuffer, block->x - FRAMES_START_X, block->y,
+				UNIT_SIZE_X, UNIT_SIZE_Y,
+				hdc_loadBmp, UNIT_SIZE_X * block->frame_id, 0, UNIT_SIZE_X, UNIT_SIZE_Y,
+				RGB(255, 255, 255));
+		}
+		for (int i = 0; i < bonus.size(); i++) {
+			Bonus* bonu = bonus[i];
+			if (bonu->display) {
+				SelectObject(hdc_loadBmp, bonu->img);
+				TransparentBlt(
+					hdc_memBuffer, bonu->x - FRAMES_START_X, bonu->y,
+					UNIT_SIZE_X, UNIT_SIZE_Y,
+					hdc_loadBmp,0 , 0, UNIT_SIZE_X, UNIT_SIZE_Y,
+					RGB(255, 255, 255));
+			}
+			
+		}
 		for (int i = 0; i < hearts.size(); i++) {
 			Health* heart = hearts[i];
 			if (heart != nullptr) {
@@ -1223,18 +1304,6 @@ void Paint(HWND hWnd)
 					hdc_memBuffer, heart->x, heart->y,
 					UNIT_SIZE_X, UNIT_SIZE_Y,
 					hdc_loadBmp, UNIT_SIZE_X * heart->frame_column, UNIT_SIZE_Y * heart->frame_row, UNIT_SIZE_X, UNIT_SIZE_Y,
-					RGB(255, 255, 255)
-				);
-			}
-		}
-		for (int i = 0; i < mobs.size(); i++) {
-			Unit* mob = mobs[i];
-			if (mob != nullptr) {
-				SelectObject(hdc_loadBmp, mob->img);
-				TransparentBlt(
-					hdc_memBuffer, mob->x - FRAMES_START_X, mob->y - UNIT_SIZE_Y,
-					UNIT_SIZE_X, UNIT_SIZE_Y,
-					hdc_loadBmp, UNIT_SIZE_X * mob->frame_column, UNIT_SIZE_Y * mob->frame_row, UNIT_SIZE_X, UNIT_SIZE_Y,
 					RGB(255, 255, 255)
 				);
 			}

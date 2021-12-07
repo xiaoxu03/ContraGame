@@ -68,7 +68,7 @@
     <Image Include="res\bk_title.bmp">
       <Filter>资源文件</Filter>
     </Image>
-    <Image Include="res\tx_bouns.bmp">
+    <Image Include="res\tx_bonus.bmp">
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="res\tx_box.bmp">
@@ -119,7 +119,12 @@
     <Image Include="res\RESTART.bmp">
       <Filter>资源文件</Filter>
     </Image>
-    <Image Include="res\bk_gameover.bmp" />
-    <Image Include="res\tx_attack.bmp" />
+    <Image Include="res\tx_attack.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="res\bk_gameover.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="res\jump_fruit.bmp" />
   </ItemGroup>
 </Project>

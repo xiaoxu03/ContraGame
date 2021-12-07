@@ -168,6 +168,7 @@
     <Image Include="res\bk_title.bmp" />
     <Image Include="res\Blue.bmp" />
     <Image Include="res\Hero\hero.bmp" />
+    <Image Include="res\jump_fruit.bmp" />
     <Image Include="res\MENU.bmp" />
     <Image Include="res\HELP.bmp" />
     <Image Include="res\icon.ico" />
@@ -176,7 +177,7 @@
     <Image Include="res\RESUME.bmp" />
     <Image Include="res\START.bmp" />
     <Image Include="res\tx_attack.bmp" />
-    <Image Include="res\tx_bouns.bmp" />
+    <Image Include="res\tx_bonus.bmp" />
     <Image Include="res\tx_box.bmp" />
     <Image Include="res\tx_coin.bmp" />
     <Image Include="res\tx_door.bmp" />

@@ -65,21 +65,15 @@
 #define UNIT_STATUS_WALK		1		//行走
 #define UNIT_STATUS_JUMP		2		//跳跃
 #define UNIT_STATUS_CLIMB		3		//攀爬
-#define UNIT_STATUS_DEAD		4		//
+#define UNIT_STATUS_DEAD		4		//死亡
+
+//单位技能种类定义
+#define SKILL_NONE				0		//无技能
+#define SKILL_JUMP				1		//二段跳
 
 //单位方向定义
 #define UNIT_DIRECT_RIGHT		0		//向右
 #define UNIT_DIRECT_LEFT		1		//向左
-
-
-//背景
-/*#define BG_SRC_COUNT			1		//背景资源数量
-#define BG_COLUMNS				1		//背景列数
-#define BG_ROWS					1		//背景行数
-#define BG_ROWS_SKY				0		//背景天空行数
-#define BG_ROWS_LAND			1		//背景地面行数
-#define BG_CELL_WIDTH			1024	//背景单格宽度
-#define BG_CELL_HEIGHT			768		*///背景单格高度
 
 //其它定义
 #define BUTTON_STARTGAME			1001	//开始游戏按钮ID
@@ -164,6 +158,7 @@ struct Unit
 	int type;		//单位类型
 	int status;		//单位状态
 	int direction;	//单位方向
+	int skill_type;	//
 
 	int x;			//坐标x
 	int y;			//坐标y
@@ -172,8 +167,22 @@ struct Unit
 	double ax;		//加速度x
 	double ay;		//加速度y
 	int health;		//生命值
+	bool display;	//是否显示
+	int death_timer;
 };
-
+struct Bonus_Block {
+	HBITMAP img;
+	int x;
+	int y;
+	int frame_id;
+};
+struct Bonus {
+	HBITMAP img;
+	int x;
+	int y;
+	int type;
+	bool display;
+};
 //血量结构体定义
 struct Health {
 	HBITMAP image;
