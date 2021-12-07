@@ -196,6 +196,15 @@
     <Image Include="res\ui_numbers.bmp" />
     <Image Include="res\ui_x.bmp" />
   </ItemGroup>
+  <ItemGroup>
+    <Media Include="..\..\..\..\..\..\游戏素材\音效\attack.wav" />
+    <Media Include="..\..\..\..\..\..\游戏素材\音效\dpider_dead.wav" />
+    <Media Include="..\..\..\..\..\..\游戏素材\音效\hurt.wav" />
+    <Media Include="..\..\..\..\..\..\游戏素材\音效\ingame calm.wav" />
+    <Media Include="..\..\..\..\..\..\游戏素材\音效\ingame.wav" />
+    <Media Include="..\..\..\..\..\..\游戏素材\音效\menu.wav" />
+    <Media Include="..\..\..\..\..\..\游戏素材\音效\spider_hurt.wav" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

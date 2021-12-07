@@ -1,5 +1,4 @@
 ﻿// ContraGame.cpp : 定义应用程序的入口点。
-//
 
 #include "ContraGame.h"
 
@@ -315,6 +314,17 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_BackButton = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_BACK));
 	bmp_ResumeButton = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_RESUME));
 	bmp_MenuButton = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_MENU));
+	//加载声音资源
+	mciSendString(TEXT("OPEN res/wav/menu.wav ALIAS MENU"), NULL, 0, 0);
+	mciSendString(TEXT("OPEN res/wav/attack.wav ALIAS ATTACK"), NULL, 0, 0);
+	mciSendString(TEXT("OPEN res/wav/spider_hurt.wav ALIAS SPIDER_HURT"), NULL, 0, 0);
+	mciSendString(TEXT("OPEN res/wav/spider_die.wav ALIAS SPIDER_DIE"), NULL, 0, 0);
+	mciSendString(TEXT("OPEN res/wav/music1.wav ALIAS MUSIC1"), NULL, 0, 0);
+	mciSendString(TEXT("OPEN res/wav/music2.wav ALIAS MUSIC2"), NULL, 0, 0);
+	mciSendString(TEXT("OPEN res/wav/hurt.wav ALIAS HURT"), NULL, 0, 0);
+	mciSendString(TEXT("OPEN res/wav/heat.wav ALIAS EAT"), NULL, 0, 0);
+	mciSendString(TEXT("OPEN res/wav/open.wav ALIAS OPEN"), NULL, 0, 0);
+	mciSendString(TEXT("OPEN res/wav/climb.wav ALIAS CLIMB"), NULL, 0, 0);
 	//添加按钮
 	Button* startButton = CreateButton(BUTTON_STARTGAME, bmp_StartButton, BUTTON_STARTGAME_WIDTH, BUTTON_STARTGAME_HEIGHT,
 		((WINDOW_WIDTH - BUTTON_STARTGAME_WIDTH) / 2), ((WINDOW_WIDTH - BUTTON_STARTGAME_HEIGHT) / 2 -100));
@@ -675,7 +685,35 @@ void InitStage(HWND hWnd, int stageID)
 		currentStage->bg = bmp_Title;
 		currentStage->timeCountDown = 0;
 		currentStage->timerOn = false;
-
+		mciSendString(TEXT("CLOSE MENU"), NULL, 0, 0);
+		mciSendString(TEXT("CLOSE ATTACK"), NULL, 0, 0);
+		mciSendString(TEXT("CLOSE ALIAS SPIDER_HURT"), NULL, 0, 0);
+		mciSendString(TEXT("CLOSE SPIDER_DIE"), NULL, 0, 0);
+		mciSendString(TEXT("CLOSE MUSIC1"), NULL, 0, 0);
+		mciSendString(TEXT("CLOSE MUSIC2"), NULL, 0, 0);
+		mciSendString(TEXT("CLOSE HURT"), NULL, 0, 0);
+		mciSendString(TEXT("CLOSE EAT"), NULL, 0, 0);
+		mciSendString(TEXT("CLOSE OPEN"), NULL, 0, 0);
+		mciSendString(TEXT("CLOSE CLIMB"), NULL, 0, 0);
+		mciSendString(TEXT("OPEN res/wav/menu.wav ALIAS MENU"), NULL, 0, 0);
+		mciSendString(TEXT("OPEN res/wav/attack.wav ALIAS ATTACK"), NULL, 0, 0);
+		mciSendString(TEXT("OPEN res/wav/spider_hurt.wav ALIAS SPIDER_HURT"), NULL, 0, 0);
+		mciSendString(TEXT("OPEN res/wav/spider_die.wav ALIAS SPIDER_DIE"), NULL, 0, 0);
+		mciSendString(TEXT("OPEN res/wav/music1.wav ALIAS MUSIC1"), NULL, 0, 0);
+		mciSendString(TEXT("OPEN res/wav/music2.wav ALIAS MUSIC2"), NULL, 0, 0);
+		mciSendString(TEXT("OPEN res/wav/hurt.wav ALIAS HURT"), NULL, 0, 0);
+		mciSendString(TEXT("OPEN res/wav/eat.wav ALIAS EAT"), NULL, 0, 0);
+		mciSendString(TEXT("OPEN res/wav/open.wav ALIAS OPEN"), NULL, 0, 0);
+		mciSendString(TEXT("OPEN res/wav/climb.wav ALIAS CLIMB"), NULL, 0, 0);
+		mciSendString(TEXT("PLAY MENU FROM 0"), NULL, 0, NULL);
+		
+		//各种声音资源
+		//mciSendString(TEXT("PLAY HURT FROM 0"), NULL, 0, NULL);
+		//mciSendString(TEXT("PLAY MUSIC1 FROM 0"), NULL, 0, NULL);
+		//mciSendString(TEXT("PLAY MUSIC2 FROM 0"), NULL, 0, NULL);
+		//mciSendString(TEXT("PLAY ATTACK FROM 0"), NULL, 0, NULL);
+		//mciSendString(TEXT("PLAY SPIDER_HURT FROM 0"), NULL, 0, NULL);
+		//mciSendString(TEXT("PLAY SPIDER_DIE FROM 0"), NULL, 0, NULL);
 		//显示开始界面的按钮
 		for (int i = 0; i < buttons.size(); i++)
 		{
@@ -737,7 +775,8 @@ void InitStage(HWND hWnd, int stageID)
 			}
 		}
 
-
+		mciSendString(TEXT("CLOSE MENU"), NULL, 0, NULL);
+		mciSendString(TEXT("PLAY MUSIC1"), NULL, 0, NULL);
 		// 按场景初始化单位及矩形平台
 		switch (stageID) {
 		case STAGE_1:
@@ -859,12 +898,14 @@ void OpenDoor(Unit* unit) {
 		doors[0]->frame_column = 0;
 		uis[3]->frame_column = 0;
 		unit->health = 6;
+		mciSendString(TEXT("PLAY OPEN FROM 0"), NULL, 0, NULL);
 	}
 }
 //攻击函数
 void Attack(Unit* unit) {
 	if (keyXDown && !Attacking) {
 		Attacking = true;
+		mciSendString(TEXT("PLAY ATTACK FROM 0"), NULL, 0, NULL);
 	}
 	else if (!keyXDown ) {
 		Attacking = false;
@@ -883,17 +924,21 @@ void Attack(Unit* unit) {
 			for (int i = 0; i < mobs.size(); i++) {
 			Unit* mob = mobs[i];
 			if ((mob->x - unit->x>= 0 && mob->x - unit->x < 80 && !unit->direction) || (mob->x - unit->x <= 0 && mob->x - unit->x > -80 && unit->direction) && unit->health > 0) {
+				mciSendString(TEXT("PLAY SPIDER_HURT FROM 0"), NULL, 0, NULL);
 				mob->health--;
 				mob->x += (0.5 - unit->direction) * 120;
 				Attacked = true;
+			}else if (mob->health <= 0) {
+				mciSendString(TEXT("PLAY SPIDER_DIE FROM 0"), NULL, 0, NULL);
 			}
 		}
 	}
 }
 void Eat(Unit* unit) {
-	if (bonus[0]->display && sqrt((unit->x - bonus[0]->x) * (unit->x - bonus[0]->x) + (unit->y - bonus[0]->y) * (unit->y - bonus[0]->y)) <= 40) {
+	if (bonus[0]->display && sqrt(((unit->x - bonus[0]->x) * (unit->x - bonus[0]->x)) + ((unit->y - bonus[0]->y) * (unit->y - bonus[0]->y))) <= 40) {
 		unit->skill_type = SKILL_JUMP;
 		bonus[0]->display = false;
+		mciSendString(TEXT("PLAY EAT FROM 0"), NULL, 0, NULL);
 	}else if (bonus[1]->display && sqrt((unit->x - bonus[1]->x) * (unit->x - bonus[1]->x) + (unit->y - bonus[1]->y) * (unit->y - bonus[1]->y)) <= 40) {
 		bonus[1]->display = false;
 		uis[3]->frame_column = 1;
@@ -1002,24 +1047,29 @@ void Climb(Unit* unit) {
 	{
 		unit->vy = -1.4;
 		unit->vx = 1.4;
+		mciSendString(TEXT("PLAY CLIMB FROM 0"), NULL, 0, NULL);
 	}
 	else if (keyUpDown && keyRightDown)
 	{
 		unit->vy = -1.4;
 		unit->vx = -1.4;
+		mciSendString(TEXT("PLAY CLIMB FROM 0"), NULL, 0, NULL);
 	}
 	else if(keyUpDown && unit->y >= 180)
 	{
 		unit->vy = -2;
+		mciSendString(TEXT("PLAY CLIMB FROM 0"), NULL, 0, NULL);
 	}
 	else if (keyRightDown)
 	{
 		unit->vx = 1;
+		mciSendString(TEXT("PLAY CLIMB FROM 0"), NULL, 0, NULL);
 	}
 	
 	else if (keyLeftDown)
 	{
 		unit->vx = -2;
+		mciSendString(TEXT("PLAY CLIMB FROM 0"), NULL, 0, NULL);
 	}
 	else
 	{
@@ -1071,6 +1121,7 @@ void Hurt(Unit* unit) {
 			if (units[0]->x - mobs[i]->x >= 0) unit->x += 80;
 			else unit->x -= 80;
 			unit->health--;
+			mciSendString(TEXT("PLAY HURT FROM 0"), NULL, 0, NULL);
 		}
 	}
 	if (unit->health <= 0) Dead = true;

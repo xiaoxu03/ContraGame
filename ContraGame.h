@@ -20,7 +20,8 @@
 // TODO:  在此处引用程序需要的其他头文件
 #include <vector>
 #include <math.h>
-
+#include <MMSystem.h>
+#pragma comment(lib, "Winmm.lib")
 
 #pragma endregion
 
