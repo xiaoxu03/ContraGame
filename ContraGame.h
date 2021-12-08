@@ -35,12 +35,14 @@
 //按键定义
 #define	VK_Z					0x5A		//定义Z键
 #define VK_X					0x58		//定义X键
+
 #define STAGE_STARTMENU			0			//开始画面的ID
 #define STAGE_HELP				-1			//帮助画面的ID
 #define STAGE_1					1			//第一个游戏场景的ID
 #define STAGE_2					2			//第二个游戏场景的ID
 #define STAGE_3 				3			//第三个游戏场景的ID
 #define STAGE_4					4			//第四个游戏场景的ID
+#define STAGE_SELECT			5			//
 
 
 
@@ -83,6 +85,8 @@
 #define BUTTON_MENU					1004	//菜单按钮ID
 #define BUTTON_RESUME				1005	//继续按钮ID
 #define BUTTON_RESTART				1006	//重新开始按钮ID
+#define	BUTTON_SELECT_1				1007	//
+#define BUTTON_SELECT_2				1008	//
 #define BUTTON_STARTGAME_WIDTH		212		//开始游戏按钮宽度
 #define BUTTON_STARTGAME_HEIGHT		76		//开始游戏按钮高度
 #define BUTTON_RESTART_WIDTH		212		//重新开始游戏按钮宽度
@@ -161,6 +165,7 @@ struct Unit
 	int direction;	//单位方向
 	int skill_type;	//
 
+	int v;
 	int x;			//坐标x
 	int y;			//坐标y
 	double vx;		//速度x
@@ -168,6 +173,7 @@ struct Unit
 	double ax;		//加速度x
 	double ay;		//加速度y
 	int health;		//生命值
+	int attack;		//攻击力
 	bool display;	//是否显示
 	int death_timer;
 };

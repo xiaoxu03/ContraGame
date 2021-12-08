@@ -134,6 +134,12 @@
     <Image Include="res\ui_key.bmp">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="res\bk_factory.bmp" />
+    <Image Include="res\sword.bmp" />
+    <Image Include="res\win.bmp" />
+    <Image Include="res\BUTTON_STAGE_1.bmp" />
+    <Image Include="res\BUTTON_STAGE_2.bmp" />
+    <Image Include="res\select.bmp" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="..\..\..\..\..\..\游戏素材\音效\attack.wav" />

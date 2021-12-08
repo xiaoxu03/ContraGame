@@ -163,11 +163,14 @@
   <ItemGroup>
     <Image Include="res\BACK.bmp" />
     <Image Include="res\bitmap1.bmp" />
+    <Image Include="res\bk_factory.bmp" />
     <Image Include="res\bk_forest.bmp" />
     <Image Include="res\bk_gameover.bmp" />
     <Image Include="res\bk_help.bmp" />
     <Image Include="res\bk_title.bmp" />
     <Image Include="res\Blue.bmp" />
+    <Image Include="res\BUTTON_STAGE_1.bmp" />
+    <Image Include="res\BUTTON_STAGE_2.bmp" />
     <Image Include="res\Hero\hero.bmp" />
     <Image Include="res\jump_fruit.bmp" />
     <Image Include="res\MENU.bmp" />
@@ -176,7 +179,9 @@
     <Image Include="res\Red.bmp" />
     <Image Include="res\RESTART.bmp" />
     <Image Include="res\RESUME.bmp" />
+    <Image Include="res\select.bmp" />
     <Image Include="res\START.bmp" />
+    <Image Include="res\sword.bmp" />
     <Image Include="res\tx_attack.bmp" />
     <Image Include="res\tx_bonus.bmp" />
     <Image Include="res\tx_box.bmp" />
@@ -195,6 +200,7 @@
     <Image Include="res\ui_key_true.bmp" />
     <Image Include="res\ui_numbers.bmp" />
     <Image Include="res\ui_x.bmp" />
+    <Image Include="res\win.bmp" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="..\..\..\..\..\..\游戏素材\音效\attack.wav" />

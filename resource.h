@@ -41,13 +41,19 @@
 #define IDB_BITMAP_ATTACK               181
 #define IDB_BITMAP_JUMP                 182
 #define IDB_BITMAP_UIKEY                184
+#define IDB_BITMAP_STAGE_2              192
+#define IDB_BITMAP_SWORD                193
+#define IDB_BITMAP_WIN                  194
+#define IDB_BITMAP_SELECT_1             195
+#define IDB_BITMAP_SELECT_2             196
+#define IDB_BITMAP_SELECT               197
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        192
+#define _APS_NEXT_RESOURCE_VALUE        198
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110

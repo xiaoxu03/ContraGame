@@ -26,6 +26,7 @@ HBITMAP bmp_HelpMenu;			//帮助界面图像资源
 HBITMAP bmp_ResumeButton;		//继续游戏按钮资源
 HBITMAP bmp_MenuButton;			//回到主菜单按钮资源
 HBITMAP bmp_Stage1;				//第一关图像资源
+HBITMAP bmp_Stage2;				//第二关图像资源
 HBITMAP bmp_Hero;				//主角图像资源
 HBITMAP bmp_Bouns;				//问号砖资源
 HBITMAP bmp_Box;				//箱子资源
@@ -46,6 +47,13 @@ HBITMAP bmp_RestartButton;		//重新开始按钮资源
 HBITMAP bmp_GameOver;			//游戏是否结束
 HBITMAP bmp_Attack;				//攻击资源
 HBITMAP bmp_JumpFruit;			//跳跃果实
+HBITMAP bmp_Sword;				//游戏成功
+HBITMAP bmp_GameWin;			//
+HBITMAP bmp_select_1;
+HBITMAP	bmp_select_2;
+HBITMAP bmp_select;
+
+
 int nowStage = STAGE_STARTMENU;	//定义初始化当前场景编号
 Stage* currentStage = NULL;		//当前场景状态
 vector<Unit*> units;			//单位
@@ -71,6 +79,9 @@ bool Dead = false;
 bool Attacking = false;
 bool Attacked = false;
 bool DoubleJumped = false;
+bool GameWin = false;
+bool do_fall = false;
+bool Do_fall = false;
 //帧
 int FRAMES_HOLD[] = { 0 };
 int FRAMES_HOLD_COUNT = 1;
@@ -292,6 +303,7 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_Title = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_STAGE_TITLE));
 	bmp_HelpMenu = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_STAGE_HELP));
 	bmp_Stage1 = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_STAGE_1));
+	bmp_Stage2 = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_STAGE_2));
 	bmp_Bouns = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_BONUS));
 	bmp_Box = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_BOX));
 	bmp_Coin = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_COIN));
@@ -301,12 +313,15 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_Lazer = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_LAZER));
 	bmp_Switch = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_SWITCH));
 	bmp_JumpFruit = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_JUMP));
+	bmp_Sword = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_SWORD));
+	bmp_select = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_SELECT));
 	//加载UI图像资源
 	bmp_Numbers = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_NUMBERS));
 	bmp_Heart = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_HEART));
 	bmp_UIKey = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_UIKEY));
 	bmp_X = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_X));
 	bmp_GameOver = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_OVER));
+	bmp_GameWin = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_WIN));
 	//加载按钮图像资源
 	bmp_RestartButton = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_RESTART));
 	bmp_StartButton = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_START));
@@ -314,6 +329,8 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	bmp_BackButton = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_BACK));
 	bmp_ResumeButton = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_RESUME));
 	bmp_MenuButton = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_MENU));
+	bmp_select_1 = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_SELECT_1));
+	bmp_select_2 = LoadBitmap(((LPCREATESTRUCT)lParam)->hInstance, MAKEINTRESOURCE(IDB_BITMAP_SELECT_2));
 	//加载声音资源
 	mciSendString(TEXT("OPEN res/wav/menu.wav ALIAS MENU"), NULL, 0, 0);
 	mciSendString(TEXT("OPEN res/wav/attack.wav ALIAS ATTACK"), NULL, 0, 0);
@@ -338,6 +355,10 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		((WINDOW_WIDTH - BUTTON_RESUME_WIDTH) / 2), ((WINDOW_WIDTH - BUTTON_RESUME_HEIGHT) / 2 - 200));
 	Button* restartButton = CreateButton(BUTTON_RESTART, bmp_RestartButton, BUTTON_RESTART_WIDTH, BUTTON_RESTART_HEIGHT,
 		((WINDOW_WIDTH - BUTTON_RESTART_WIDTH) / 2), ((WINDOW_WIDTH - BUTTON_RESTART_HEIGHT) / 2 ));
+	Button* select1Button = CreateButton(BUTTON_SELECT_1, bmp_select_1, BUTTON_STARTGAME_WIDTH, BUTTON_STARTGAME_HEIGHT,
+		((WINDOW_WIDTH - BUTTON_STARTGAME_WIDTH) / 2 - 200), ((WINDOW_WIDTH - BUTTON_STARTGAME_HEIGHT) / 2 - 100));
+	Button* select2Button = CreateButton(BUTTON_SELECT_2, bmp_select_2, BUTTON_STARTGAME_WIDTH, BUTTON_STARTGAME_HEIGHT,
+		((WINDOW_WIDTH - BUTTON_STARTGAME_WIDTH) / 2 + 200), ((WINDOW_WIDTH - BUTTON_STARTGAME_HEIGHT) / 2 - 100));
 	//返回按钮地址
 	buttons.push_back(startButton);
 	buttons.push_back(helpButton);
@@ -345,6 +366,8 @@ void InitGame(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	buttons.push_back(menuButton);
 	buttons.push_back(resumeButton);
 	buttons.push_back(restartButton);
+	buttons.push_back(select1Button);
+	buttons.push_back(select2Button);
 	//初始化背景
 	//bmp_Title = InitBackGround(hWnd, bmp_Title);
 
@@ -475,7 +498,17 @@ void LButtonDown(HWND hWnd, WPARAM wParam, LPARAM lParam)
 					//条件判断进入哪个场景
 				case BUTTON_STARTGAME:
 				{
+					InitStage(hWnd, STAGE_SELECT);
+					break;
+				}
+				case BUTTON_SELECT_1:
+				{
 					InitStage(hWnd, STAGE_1);
+					break;
+				}
+				case BUTTON_SELECT_2:
+				{
+					InitStage(hWnd, STAGE_2);
 					break;
 				}
 				case BUTTON_HELP:
@@ -622,10 +655,11 @@ Unit* CreateUnit(int side, int type, int x, int y, int health, HBITMAP texture)
 	unit->vx = 0;
 	unit->vy = 0;
 	unit->health = health;
+	unit->attack = 1;
 	unit->skill_type = SKILL_NONE;
 	return unit;
 }
-Unit* CreateSpider(int side, int type, int x, int y, int health, HBITMAP texture)
+Unit* CreateSpider(int side, int type, int x, int y, int health,int v, HBITMAP texture)
 {
 	Unit* unit = new Unit();
 	unit->side = side;
@@ -644,6 +678,7 @@ Unit* CreateSpider(int side, int type, int x, int y, int health, HBITMAP texture
 
 	unit->x = x;
 	unit->y = y;
+	unit->v = v;
 	unit->vx = 0;
 	unit->vy = 0;
 	unit->health = health;
@@ -734,6 +769,27 @@ void InitStage(HWND hWnd, int stageID)
 
 
 	}
+	else if (stageID == STAGE_SELECT) {
+		currentStage->bg = bmp_select;
+		currentStage->timeCountDown = 0;
+		currentStage->timerOn = false;
+		//显示选关界面的按钮
+		for (int i = 0; i < buttons.size(); i++)
+		{
+			Button* button = buttons[i];
+			if (button->buttonID == BUTTON_SELECT_1)
+			{
+				button->visible = true;
+			}
+			else if (button->buttonID == BUTTON_SELECT_2) {
+				button->visible = true;
+			}
+			else
+			{
+				button->visible = false;
+			}
+		}
+	}
 	else if (stageID == STAGE_HELP)
 	{
 		//TODO
@@ -755,17 +811,15 @@ void InitStage(HWND hWnd, int stageID)
 			}
 		}
 	}
-	else if (stageID == STAGE_1)
+	else if (stageID >= STAGE_1 && stageID <= STAGE_2)
 	{
-		currentStage->bg = bmp_Stage1;
-		currentStage->timeCountDown = 10000;
-		currentStage->timerOn = true;
 
-		//显示游戏界面的按钮
+		mciSendString(TEXT("CLOSE MENU"), NULL, 0, NULL);
+		
 		for (int i = 0; i < buttons.size(); i++)
 		{
 			Button* button = buttons[i];
-			if (false) 
+			if (false)
 			{
 				button->visible = true;
 			}
@@ -774,21 +828,23 @@ void InitStage(HWND hWnd, int stageID)
 				button->visible = false;
 			}
 		}
-
-		mciSendString(TEXT("CLOSE MENU"), NULL, 0, NULL);
-		mciSendString(TEXT("PLAY MUSIC1"), NULL, 0, NULL);
 		// 按场景初始化单位及矩形平台
 		switch (stageID) {
 		case STAGE_1:
+			currentStage->bg = bmp_Stage1;
+			currentStage->timeCountDown = 10000;
+			currentStage->timerOn = true;
+			mciSendString(TEXT("PLAY MUSIC1"), NULL, 0, NULL);
 			units.push_back(CreateUnit(SIDE_HERO, UNIT_TYPE_PLAYER, 200, GROUND_HEIGHT, 6, bmp_Hero));
-			mobs.push_back(CreateSpider(SIDE_MOB, UNIT_TYPE_SPIDER, 1100, GROUND_HEIGHT, 2, bmp_Spider));
-			mobs.push_back(CreateSpider(SIDE_MOB, UNIT_TYPE_SPIDER, 2500, GROUND_HEIGHT, 2, bmp_Spider));
+			mobs.push_back(CreateSpider(SIDE_MOB, UNIT_TYPE_SPIDER, 1100, GROUND_HEIGHT, 2, 1, bmp_Spider));
+			mobs.push_back(CreateSpider(SIDE_MOB, UNIT_TYPE_SPIDER, 2500, GROUND_HEIGHT, 2, 1, bmp_Spider));
 			plats.push_back(CreatePlat(1952, 2140, 378, 441, false));
 			plats.push_back(CreatePlat(2267, 2582, 252, 315, false));
 			plats.push_back(CreatePlat(4095, 4283, 252, 285, true));
 			plats.push_back(CreatePlat(4095, 4283, 504, 537, true));
-			plats.push_back(CreatePlat(4220, 4360, 378, 410, true));
+			plats.push_back(CreatePlat(4220, 4400, 378, 410, true));
 			plats.push_back(CreatePlat(4420, 4472, 0, 490, false));
+			plats.push_back(CreatePlat(-100, 0, 0, 1260, false));
 			uis.push_back(CreateHealth(bmp_Heart, 0, 0));
 			uis.push_back(CreateHealth(bmp_Heart, 63, 0));
 			uis.push_back(CreateHealth(bmp_Heart, 126, 0));
@@ -798,6 +854,44 @@ void InitStage(HWND hWnd, int stageID)
 			bonus.push_back(CreateBonus(bmp_Key, 2400, 188, SKILL_NONE,true));
 			doors.push_back(CreateDoor(bmp_Door, 3224 - 189, 441));
 			break;
+		case STAGE_2:
+			mciSendString(TEXT("CLOSE MUSIC1"), NULL, 0, NULL);
+			mciSendString(TEXT("OPEN res/wav/music1.wav ALIAS MUSIC1"), NULL, 0, 0);
+			mciSendString(TEXT("PLAY MUSIC2"), NULL, 0, NULL);
+			currentStage->bg = bmp_Stage2;
+			currentStage->timeCountDown = 10000;
+			currentStage->timerOn = true;
+			units.push_back(CreateUnit(SIDE_HERO, UNIT_TYPE_PLAYER, 200, GROUND_HEIGHT, 6, bmp_Hero));
+			mobs.push_back(CreateSpider(SIDE_MOB, UNIT_TYPE_SPIDER, 900, GROUND_HEIGHT, 10, 2, bmp_Spider));
+			mobs.push_back(CreateSpider(SIDE_MOB, UNIT_TYPE_SPIDER, 2500, GROUND_HEIGHT, 10, 2,bmp_Spider));
+			mobs.push_back(CreateSpider(SIDE_MOB, UNIT_TYPE_SPIDER, 6200, GROUND_HEIGHT, 100, 4, bmp_Spider));
+			plats.push_back(CreatePlat(0, 6300, 0, 63, false));
+			plats.push_back(CreatePlat(629, 944, 378, 441, false));
+			plats.push_back(CreatePlat(1133, 1323, 252, 315, false));
+			plats.push_back(CreatePlat(1574, 1701, 189, 252, false));
+			plats.push_back(CreatePlat(1890, 2079, 189, 252, false));
+			plats.push_back(CreatePlat(2204, 2393, 189, 252, false));
+			plats.push_back(CreatePlat(2456, 2709, 189, 315, false));
+			plats.push_back(CreatePlat(2646, 2709, 315, 567, false));
+			plats.push_back(CreatePlat(2961, 3023, 63, 315, false));
+			plats.push_back(CreatePlat(-100, 0, 0, 1260, false));
+			plats.push_back(CreatePlat(2961, 3590, 252, 315, false));
+			plats.push_back(CreatePlat(3464, 3527, 63, 126, false));
+			plats.push_back(CreatePlat(4031, 4094, 189, 315, false));
+			plats.push_back(CreatePlat(4410, 4788, 315, 378, false));
+			plats.push_back(CreatePlat(4914, 4976, 189, 567, false));
+			plats.push_back(CreatePlat(2016, 2079, 378, 441, false));
+			plats.push_back(CreatePlat(3590, 4031, 252, 285, true));
+			plats.push_back(CreatePlat(3590, 4031, 378, 411, true));
+			uis.push_back(CreateHealth(bmp_Heart, 0, 0));
+			uis.push_back(CreateHealth(bmp_Heart, 63, 0));
+			uis.push_back(CreateHealth(bmp_Heart, 126, 0));
+			uis.push_back(CreateHealth(bmp_UIKey, 1180, 0));
+			bonus_blocks.push_back(CreateBlock(bmp_Bouns, 2016, 378));
+			bonus.push_back(CreateBonus(bmp_JumpFruit, 2016, 318, SKILL_JUMP, false));
+			bonus.push_back(CreateBonus(bmp_Key, 2400, 192, SKILL_NONE, true));
+			bonus.push_back(CreateBonus(bmp_Sword, 3024, 189, SKILL_JUMP, true));
+			doors.push_back(CreateDoor(bmp_Door, 3224 - 189, 441));
 		default:
 			break;
 		}
@@ -810,6 +904,17 @@ void InitStage(HWND hWnd, int stageID)
 // 刷新单位状态函数
 void UpdateUnits(HWND hWnd)
 {
+	if (units[0]->x > 6230 && currentStage->stageID == STAGE_1) {
+		plats.clear();
+		units.clear();
+		mobs.clear();
+		uis.clear();
+		bonus.clear();
+		bonus_blocks.clear();
+		doors.clear();
+		FRAMES_START_X = 0;
+		InitStage(hWnd, STAGE_2);
+	}
 	for (int i = 0; i < units.size(); i++) {
 		Unit* unit = units[i];
 		//根据单位类型选择行为函数
@@ -817,6 +922,23 @@ void UpdateUnits(HWND hWnd)
 		switch (unit->type) {
 		case UNIT_TYPE_PLAYER:
 			UnitBehaviour_hero(unit);
+			if (currentStage->stageID == STAGE_2 && mobs[2]->health <= 0) {
+				currentStage->bg = bmp_Stage2;
+				currentStage->timeCountDown = 10000;
+				currentStage->timerOn = false;
+				GameWin = true; for (int i = 0; i < buttons.size(); i++)
+				{
+					Button* button = buttons[i];
+					if (button->buttonID == BUTTON_MENU)
+					{
+						button->visible = true;
+					}
+					else
+					{
+						button->visible = false;
+					}
+				}
+			}
 			if (units[0]->y > 1260 || Dead) {
 				Dead = false;
 				currentStage->timerOn = false;
@@ -844,6 +966,31 @@ void UpdateUnits(HWND hWnd)
 						}
 					}
 				}
+				if (currentStage->stageID == STAGE_2)
+				{
+					currentStage->bg = bmp_Stage2;
+					currentStage->timeCountDown = 10000;
+					currentStage->timerOn = false;
+					GameOver = true;
+					//显示游戏界面的按钮
+					for (int i = 0; i < buttons.size(); i++)
+					{
+						Button* button = buttons[i];
+						if (button->buttonID == BUTTON_RESTART)
+						{
+							button->visible = true;
+						}
+						else if (button->buttonID == BUTTON_MENU)
+						{
+							button->visible = true;
+						}
+						else
+						{
+							button->visible = false;
+						}
+					}
+				}
+				
 			}
 			break;
 		}
@@ -923,40 +1070,58 @@ void Attack(Unit* unit) {
 	if (Attacking) {
 			for (int i = 0; i < mobs.size(); i++) {
 			Unit* mob = mobs[i];
-			if ((mob->x - unit->x>= 0 && mob->x - unit->x < 80 && !unit->direction) || (mob->x - unit->x <= 0 && mob->x - unit->x > -80 && unit->direction) && unit->health > 0) {
+			if (mob->display == true && ((mob->x - unit->x>= 0 && mob->display == true && mob->x - unit->x < 80 && !unit->direction) || (mob->x - unit->x <= 0 && mob->x - unit->x > -80 && unit->direction) && unit->health > 0)) {
 				mciSendString(TEXT("PLAY SPIDER_HURT FROM 0"), NULL, 0, NULL);
-				mob->health--;
+				mob->health-=unit->attack;
 				mob->x += (0.5 - unit->direction) * 120;
 				Attacked = true;
 			}else if (mob->health <= 0) {
 				mciSendString(TEXT("PLAY SPIDER_DIE FROM 0"), NULL, 0, NULL);
+				mob->display = false;
 			}
 		}
 	}
 }
 void Eat(Unit* unit) {
 	if (bonus[0]->display && sqrt(((unit->x - bonus[0]->x) * (unit->x - bonus[0]->x)) + ((unit->y - bonus[0]->y) * (unit->y - bonus[0]->y))) <= 40) {
-		unit->skill_type = SKILL_JUMP;
+		unit->skill_type += SKILL_JUMP;
 		bonus[0]->display = false;
 		mciSendString(TEXT("PLAY EAT FROM 0"), NULL, 0, NULL);
 	}else if (bonus[1]->display && sqrt((unit->x - bonus[1]->x) * (unit->x - bonus[1]->x) + (unit->y - bonus[1]->y) * (unit->y - bonus[1]->y)) <= 40) {
 		bonus[1]->display = false;
+		unit->skill_type += SKILL_NONE;
 		uis[3]->frame_column = 1;
+	}else if(currentStage->stageID == STAGE_2){
+		if (bonus[2]->display && sqrt((unit->x - bonus[2]->x) * (unit->x - bonus[2]->x) + (unit->y - bonus[2]->y) * (unit->y - bonus[1]->y)) <= 40) {
+			bonus[2]->display = false;
+			unit->skill_type += SKILL_NONE;
+			unit->attack = 5;
+		}
 	}
 }
 //掉落函数
 int fall(Unit* unit, int next_status) {
-	if (unit->x >= PIT1_LEFT && unit->x <= PIT1_RIGHT) {
+	if (unit->x >= PIT1_LEFT && unit->x <= PIT1_RIGHT && currentStage->stageID == STAGE_1 ) {
 		unit->vy += 0.5;
 	}
 	else {
 		for (int i = 0; i < plats.size(); i++) {
-			if (unit->vy == 0 && unit->y == plats[i]->up && unit->x  >= plats[i]->left - UNIT_SIZE_X && unit->x  <= plats[i]->right &&!(unit->x + unit->vx > plats[i]->left  - UNIT_SIZE_X && unit->x + unit->vx < plats[i]->right)) {
+			if (unit->vy == 0 && unit->y == plats[i]->up && unit->x  >= plats[i]->left - UNIT_SIZE_X && unit->x  <= plats[i]->right &&!(unit->x + unit->vx >= plats[i]->left  - UNIT_SIZE_X && unit->x + unit->vx <= plats[i]->right)) {
+				Do_fall = true;
+				for (int i = 0; i < plats.size(); i++) {
+					if (unit->vy == 0 && unit->y == plats[i]->up && unit->x + unit->vx >= plats[i]->left - UNIT_SIZE_X && unit->x + unit->vx <= plats[i]->right) {
+						Do_fall = false;
+					}
+				}
+				if(Do_fall){
+					Do_fall = false;
 				next_status = UNIT_STATUS_JUMP;
+					do_fall = true;
+				}
 			}
 		}
 	}
-	if (unit->y > GROUND_HEIGHT && (unit->x >= 1276 && unit->x <= 1438)) {
+	if (unit->y > GROUND_HEIGHT && (unit->x >= 1276 && unit->x <= 1438 && currentStage->stageID == STAGE_1)) {
 		if (unit->x + unit->vx >= 1438 && keyRightDown) {
 			unit->x = 1438 ;
 			unit->vx = 0;
@@ -989,7 +1154,7 @@ int Jump(Unit* unit) {
 	//跳跃以及掉坑
 	if (unit->y <= GROUND_HEIGHT && !keyZDown) unit->vy += 1;
 	else if (unit->y <= GROUND_HEIGHT && keyZDown)	unit->vy += 0.3;
-	else if (unit->y > GROUND_HEIGHT && !(unit->x >= PIT1_LEFT && unit->x <= PIT1_RIGHT - UNIT_SIZE_X)) {
+	else if (unit->y > GROUND_HEIGHT && !(unit->x >= PIT1_LEFT && unit->x <= PIT1_RIGHT - UNIT_SIZE_X && currentStage->stageID == STAGE_1)) {
 		unit->vy = 0;
 		unit->y = GROUND_HEIGHT;
 		next_status = UNIT_STATUS_HOLD;
@@ -1006,20 +1171,23 @@ int Jump(Unit* unit) {
 		unit->frame_column = UNIT_DIRECT_LEFT;
 		unit->vx = -5;
 	}
+	if (keyUpDown && unit->x >= 2570 && unit->x <= 2640 && unit->y > 180) {
+		next_status = UNIT_STATUS_CLIMB;
+	}
 	for (int i = 0; i < plats.size(); i++) {
 		//顶头函数
-		if (!plats[i]->is_half && unit->y >= plats[i]->down + UNIT_SIZE_Y && unit->y + unit->vy - UNIT_SIZE_Y < plats[i]->down && unit->y + unit->vy + UNIT_SIZE_Y> plats[i]->up && unit->x + unit->vx >= plats[i]->left - UNIT_SIZE_X - 5 && unit->x + unit->vx <= plats[i]->right + 5) {
+		if (!plats[i]->is_half && unit->y >= plats[i]->down + UNIT_SIZE_Y && unit->y + unit->vy - UNIT_SIZE_Y < plats[i]->down && unit->x + unit->vx >= plats[i]->left - UNIT_SIZE_X - 5 && unit->x + unit->vx <= plats[i]->right + 5) {
 			unit->y = plats[i]->down + UNIT_SIZE_Y;
 			unit->vy = -unit->vy;
 		}
 		//侧碰撞
 		else if (unit->y >= plats[i]->up && unit->y - UNIT_SIZE_Y <= plats[i]->down) {
-			if (unit->x >= plats[i]->right && unit->x + unit->vx < plats[i]->right) {
+			if (unit->x >= plats[i]->right && unit->x + unit->vx <= plats[i]->right) {
 				unit->x = plats[i]->right;
 				unit->vx = 0;
 				keyLeftDown = false;
 			}
-			if (unit->x + UNIT_SIZE_X <= plats[i]->left && unit->x + unit->vx + UNIT_SIZE_X > plats[i]->left) {
+			if (unit->x + UNIT_SIZE_X <= plats[i]->left && unit->x + unit->vx + UNIT_SIZE_X >= plats[i]->left) {
 				unit->x = plats[i]->left - UNIT_SIZE_X ;
 				unit->vx = 0;
 				keyRightDown = false;
@@ -1145,12 +1313,14 @@ void UnitBehaviour_hero(Unit* unit) {
 		else if (keyZDown && unit->y <= GROUND_HEIGHT){
 			next_status = UNIT_STATUS_JUMP;
 		}
-		else if (keyUpDown && unit->x >= 2585 && unit->x <= 2648 && unit->y > 180) {
+		else if (keyUpDown && unit->x >= 2570 && unit->x <= 2640 && unit->y > 180) {
 			next_status = UNIT_STATUS_CLIMB;
 		}	
 		break;
 	case UNIT_STATUS_WALK:
+		
 		next_status=fall(unit,next_status);
+		
 		if (keyZDown && unit->y <= GROUND_HEIGHT) {
 			next_status = UNIT_STATUS_JUMP;
 		}
@@ -1163,13 +1333,14 @@ void UnitBehaviour_hero(Unit* unit) {
 		break;
 	case UNIT_STATUS_JUMP:
 		next_status = Jump(unit);
+		
 		break;
 	case UNIT_STATUS_CLIMB:
 		Climb(unit);
 		if (keyZDown) {
 			next_status = UNIT_STATUS_JUMP;
 		}
-		else if (!(unit->x  >= LADDER1_LEFT && unit->x <= LADDER1_RIGHT) && unit->y <= LADDER1_UP + UNIT_SIZE_Y) {
+		else if (!(unit->x  >= 2570 && unit->x <=2640)) {
 			next_status = UNIT_STATUS_JUMP;
 		}
 		break;
@@ -1190,6 +1361,7 @@ void UnitBehaviour_hero(Unit* unit) {
 			}
 			break;
 		case UNIT_STATUS_WALK:
+		
 			unit->frame_sequence = FRAMES_WALK;
 			unit->frame_count = FRAMES_WALK_COUNT;
 			if (unit->direction == UNIT_DIRECT_RIGHT) {
@@ -1210,8 +1382,22 @@ void UnitBehaviour_hero(Unit* unit) {
 		case UNIT_STATUS_JUMP:
 			unit->frame_sequence = FRAMES_JUMP;
 			unit->frame_count = FRAMES_JUMP_COUNT;
-			unit->vy = -10.5;
+			if (!do_fall)
+			unit->vy = -11;
+			do_fall = false;
 			break;
+		}
+	}
+	for (int i = 0; i < plats.size(); i++) {
+		if (unit->y > plats[i]->up && unit->y - UNIT_SIZE_Y < plats[i]->down) {
+			if (unit->x >= plats[i]->right && unit->x + unit->vx <= plats[i]->right) {
+				unit->x = plats[i]->right;
+				unit->vx = 0;
+			}
+			if (unit->x + UNIT_SIZE_X <= plats[i]->left && unit->x + unit->vx + UNIT_SIZE_X >= plats[i]->left) {
+				unit->x = plats[i]->left - UNIT_SIZE_X;
+				unit->vx = 0;
+			}
 		}
 	}
 	FRAMES_START_X = Camera(unit);
@@ -1258,8 +1444,8 @@ void UnitBehaviour_mob(Unit* unit,Unit* hero) {
 	case UNIT_STATUS_WALK:
 		next_state = fall(unit, next_state);
 		if (abs(dirX) > 1200) next_state = UNIT_STATUS_HOLD;
-		if (unit->direction == UNIT_DIRECT_LEFT) unit->vx = -1;
-		else if (unit->direction == UNIT_DIRECT_RIGHT) unit->vx = 1;
+		if (unit->direction == UNIT_DIRECT_LEFT) unit->vx = -unit->v;
+		else if (unit->direction == UNIT_DIRECT_RIGHT) unit->vx = unit->v;
 		else unit->vx = 0;
 		break;
 	};
@@ -1285,7 +1471,18 @@ void UnitBehaviour_mob(Unit* unit,Unit* hero) {
 
 	//动画运行到下一帧
 	
-
+	for (int i = 0; i < plats.size(); i++) {
+		if (unit->y >= plats[i]->up && unit->y - UNIT_SIZE_Y <= plats[i]->down) {
+			if (unit->x >= plats[i]->right && unit->x + unit->vx <= plats[i]->right) {
+				unit->x = plats[i]->right;
+				unit->vx = 0;
+			}
+			if (unit->x + UNIT_SIZE_X <= plats[i]->left && unit->x + unit->vx + UNIT_SIZE_X >= plats[i]->left) {
+				unit->x = plats[i]->left - UNIT_SIZE_X;
+				unit->vx = 0;
+			}
+		}
+	}
 	unit->frame_id++;
 	unit->frame_id = unit->frame_id % unit->frame_count;
 
@@ -1322,7 +1519,6 @@ void Paint(HWND hWnd)
 
 	// 绘制背景到缓存
 	SelectObject(hdc_loadBmp, currentStage->bg);
-	//SelectObject(hdc_loadBmp, bmp_BackGround);
 
 	
 
@@ -1333,7 +1529,11 @@ void Paint(HWND hWnd)
 	else if (currentStage->stageID == STAGE_HELP) {
 		BitBlt(hdc_memBuffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, hdc_loadBmp, 0, 0, SRCCOPY);
 	}
-	else if (currentStage->stageID >= STAGE_1 && currentStage->stageID <= STAGE_1) //TODO：添加多个游戏场景
+	else if (currentStage->stageID == STAGE_SELECT) {
+		BitBlt(hdc_memBuffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, hdc_loadBmp, 0, 0, SRCCOPY);
+	}
+	
+	else if (currentStage->stageID >= STAGE_1 && currentStage->stageID <= STAGE_2) 
 	{
 		BitBlt(hdc_memBuffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, hdc_loadBmp, FRAMES_START_X, 0, SRCCOPY);
 		SelectObject(hdc_loadBmp, bmp_Door);
@@ -1417,6 +1617,15 @@ void Paint(HWND hWnd)
 				hdc_loadBmp, 0, 0, 1260, 819,
 				RGB(255, 255, 255));
 				GameOver = false;
+		}
+		if (GameWin) {
+			SelectObject(hdc_loadBmp, bmp_GameWin);
+			TransparentBlt(
+				hdc_memBuffer, 0, 0,
+				1260, 819,
+				hdc_loadBmp, 0, 0, 1260, 819,
+				RGB(255, 255, 255));
+			GameWin = false;
 		}
 	}
 
