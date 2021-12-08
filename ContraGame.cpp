@@ -1026,7 +1026,7 @@ void Knock(Unit* unit) {
 //跟随视角判定函数
 int Camera(Unit* unit) {
 	//判断条件
-	if (!((FRAMES_START_X <= 5 && unit->vx < 0) || (FRAMES_START_X >= 5035 && unit->vx > 0)) && (unit->x - FRAMES_START_X > 500 && unit->x - FRAMES_START_X < 1000)) {
+	if (!((FRAMES_START_X <= 5 && unit->vx < 0 && unit->direction) || (FRAMES_START_X >= 5035 && unit->vx > 0 && !unit->direction)) && (unit->x - FRAMES_START_X > 500 && unit->x - FRAMES_START_X < 1000)) {
 		
 		FRAMES_START_X += unit->vx;
 	}
